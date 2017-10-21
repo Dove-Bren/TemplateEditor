@@ -36,23 +36,23 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * 
  * @param <K> Type that indexes the nested fieldmaps
  */
-public class NestedEditorField<K> extends AEditorField<Map<K, FieldData<K>>> {
+public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 	
 	private static final String DESC_MISSING = "";
 	private static final String NAME_MISSING = "<default>";
 	
 	
-	private Map<K, FieldData<K>> dataMap;
-	private IEditorDisplayFormatter<K> formatter;
+	private Map<Integer, FieldData> dataMap;
+	private IEditorDisplayFormatter<Integer> formatter;
 	
 	private JTextField display;
 	private JPanel wrapper;
 	
-	public static <T> NestedEditorField<T> create(String title, Map<T, FieldData<T>> fieldMap, IEditorDisplayFormatter<T> formatter) {
-		return new NestedEditorField<T>(title, fieldMap, formatter);
-	}
+//	public static <T> NestedEditorField<T> create(String title, Map<T, FieldData<T>> fieldMap, IEditorDisplayFormatter<T> formatter) {
+//		return new NestedEditorField<T>(title, fieldMap, formatter);
+//	}
 	
-	public NestedEditorField(String title, Map<K, FieldData<K>> fieldMap, IEditorDisplayFormatter<K> formatter) {
+	public NestedEditorField(String title, Map<Integer, FieldData> fieldMap, IEditorDisplayFormatter<Integer> formatter) {
 		this.dataMap = fieldMap; // Don't actually use it till we create nested editor
 		this.formatter = formatter;
 		wrapper = new JPanel();
@@ -108,7 +108,7 @@ public class NestedEditorField<K> extends AEditorField<Map<K, FieldData<K>>> {
 		edit();
 	}
 	
-	private void updateDataMap(Map<K, FieldData<K>> map) {
+	private void updateDataMap(Map<Integer, FieldData> map) {
 		dataMap = map;
 		String name = formatter.getEditorName(map);
 		String desc = formatter.getEditorTooltip(map);
@@ -123,7 +123,7 @@ public class NestedEditorField<K> extends AEditorField<Map<K, FieldData<K>>> {
 	 * @return
 	 */
 	private boolean edit() {
-		IEditor<K> nestedEditor = new TemplateEditor<K>(dataMap);
+		IEditor<Integer> nestedEditor = new TemplateEditor<Integer>(dataMap);
 		final StringBuffer cancelled = new StringBuffer();
 		
 		JDialog dialog = new JDialog((JFrame) null, "Editor", true);
@@ -178,12 +178,12 @@ public class NestedEditorField<K> extends AEditorField<Map<K, FieldData<K>>> {
 	}
 
 	@Override
-	public Map<K, FieldData<K>> getObject() {
+	public Map<Integer, FieldData> getObject() {
 		return dataMap;
 	}
 
 	@Override
-	protected void setCurrentObject(Map<K, FieldData<K>> obj) {
+	protected void setCurrentObject(Map<Integer, FieldData> obj) {
 		dataMap = obj;
 	}
 }

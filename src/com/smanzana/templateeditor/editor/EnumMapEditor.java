@@ -36,7 +36,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	private Map<T, DataPair<T>> fields;
 	
 	// doesn't set as visible
-	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData<T>> enummap) {
+	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
 		super();
 		fields = new HashMap<>();
 		
@@ -47,7 +47,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		editor.setBorder(new EmptyBorder(20, 20, 20, 20));
 		
 		EditorField<?> comp;
-		for (Entry<T,FieldData<T>> row : enummap.entrySet()) {
+		for (Entry<T,FieldData> row : enummap.entrySet()) {
 			String keyName = row.getValue().getName();
 			if (keyName == null)
 				TextUtil.pretty(row.getKey().name());
@@ -67,7 +67,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 				comp = new TextField(keyName, (String) row.getValue().getValue());
 				break;
 			case COMPLEX:
-				comp = NestedEditorField.create(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
+				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
 				break;
 			case LIST_COMPLEX:
 				// TODO
@@ -111,10 +111,10 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	}
 
 	@Override
-	public Map<T, FieldData<T>> fetchData() {
-		Map<T, FieldData<T>> out = new HashMap<>();
+	public Map<T, FieldData> fetchData() {
+		Map<T, FieldData> out = new HashMap<>();
 		for (Entry<T, DataPair<T>> entry : fields.entrySet()) {
-			FieldData<T> data = entry.getValue().getData();
+			FieldData data = entry.getValue().getData();
 			data.setValue(entry.getValue().getField().getObject());
 			out.put(entry.getKey(), data);
 		}

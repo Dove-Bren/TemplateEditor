@@ -15,12 +15,12 @@ public interface IEditorDisplayFormatter<T> {
 	 * Returns a name for the editor to display for this object
 	 * @return
 	 */
-	public String getEditorName(Map<T, FieldData<T>> dataMap);
+	public String getEditorName(Map<T, FieldData> dataMap);
 	
 	/**
 	 * Returns a longer description that can be used as a tooltip for this object
 	 * @return
 	 */
-	public String getEditorTooltip(Map<T, FieldData<T>> dataMap);
+	public String getEditorTooltip(Map<T, FieldData> dataMap);
 	
 }
