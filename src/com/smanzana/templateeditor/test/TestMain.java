@@ -4,6 +4,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.JFrame;
@@ -26,7 +28,8 @@ public class TestMain {
 		STRVAL_3,
 		DOUBLEVAL_1,
 		INTVAL_2,
-		COMPLEX_1;
+		COMPLEX_1,
+		COMPLEX_2,
 	}
 
 	public static void main(String[] args) {
@@ -55,6 +58,61 @@ public class TestMain {
 				return "Description not supported";
 			}
 		}));
+		
+		Map<Integer, FieldData> nested2 = new HashMap<>();
+		nested2.put(1, FieldData.simple("Default Name"));
+		nested2.put(2, FieldData.simple(false));
+		nested2.put(3, FieldData.simple("NestedDefault1"));
+		List<Map<Integer, FieldData>> complexList = new LinkedList<>();
+		
+		Map<Integer, FieldData> nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		nestedobj = new HashMap<>();
+		nestedobj.put(1, FieldData.simple("Default Name"));
+		nestedobj.put(2, FieldData.simple(false));
+		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		complexList.add(nestedobj);
+		
+		map.put(Key.COMPLEX_2, FieldData.complexList(nested2, new IEditorDisplayFormatter<Integer>() {
+			@Override
+			public String getEditorName(Map<Integer, FieldData> dataMap) {
+				if (dataMap == null)
+					return null;
+				return (String) dataMap.get(1).getValue();
+			}
+			@Override
+			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
+				return null;
+			}
+		}, complexList));
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {

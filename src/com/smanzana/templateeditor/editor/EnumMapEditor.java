@@ -2,9 +2,11 @@ package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -18,6 +20,7 @@ import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.IntField;
 import com.smanzana.templateeditor.editor.fields.NestedEditorField;
+import com.smanzana.templateeditor.editor.fields.NestedEditorListField;
 import com.smanzana.templateeditor.editor.fields.TextField;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -36,6 +39,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	private Map<T, DataPair<T>> fields;
 	
 	// doesn't set as visible
+	@SuppressWarnings("unchecked")
 	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
 		super();
 		fields = new HashMap<>();
@@ -70,7 +74,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
 				break;
 			case LIST_COMPLEX:
-				// TODO
+				comp = new NestedEditorListField(keyName, row.getValue().getNestedTypes(), (List<Map<Integer, FieldData>>) row.getValue().getValue(), row.getValue().getFormatter());
 				break;
 			case LIST_DOUBLE:
 				break;
@@ -96,12 +100,13 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 				comp.getComponent().setToolTipText(buf);
 			}
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-			comp.getComponent().setPreferredSize(new Dimension(100, 25));
+			comp.getComponent().setMaximumSize(new Dimension(Short.MAX_VALUE, comp.getComponent().getPreferredSize().height));
 			editor.add(comp.getComponent());
 			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
 			comp.setOwner(owner);
 		}
 		
+		editor.add(Box.createVerticalGlue());
 		this.setViewportView(editor);
 		this.validate();
 	}

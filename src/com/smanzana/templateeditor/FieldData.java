@@ -1,5 +1,6 @@
 package com.smanzana.templateeditor;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,7 @@ import java.util.Map;
  * @author Skyler
  *
  */
-public class FieldData {
+public class FieldData implements Cloneable {
 	
 	/** Type this data is built on */
 	private FieldType type;
@@ -19,10 +20,10 @@ public class FieldData {
 	
 	
 	/** Complex type nested values for COMPLEX or LIST_COMPLEX fieldtypes */
-	public Map<Integer, FieldData> nestedTypes;
+	private Map<Integer, FieldData> nestedTypes;
 	
 	/** Formatter for complex data types */
-	public IEditorDisplayFormatter<Integer> formatter;
+	private IEditorDisplayFormatter<Integer> formatter;
 	
 	/** 
 	 * The current value of the field. Updated once the editor passes
@@ -91,7 +92,12 @@ public class FieldData {
 	
 	public static FieldData complexList(Map<Integer, FieldData> subfields,
 			IEditorDisplayFormatter<Integer> formatter) {
-		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, null);
+		return complexList(subfields, formatter, null);
+	}
+	
+	public static FieldData complexList(Map<Integer, FieldData> subfields,
+			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData>> startValue) {
+		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, startValue);
 	}
 	
 	public static <T> FieldData user(IUserData<T> template, T value) {
@@ -156,5 +162,14 @@ public class FieldData {
 
 	public List<String> getDescription() {
 		return description;
+	}
+	
+	@Override
+	public FieldData clone() {
+		Map<Integer, FieldData> cloneNestedTypes = new HashMap<>();
+		for (Integer key : nestedTypes.keySet()) {
+			cloneNestedTypes.put(key, nestedTypes.get(key).clone());
+		}
+		return new FieldData(type, userDataType, cloneNestedTypes, formatter, value).name(name).desc(description);
 	}
 }

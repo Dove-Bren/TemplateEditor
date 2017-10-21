@@ -5,13 +5,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -28,8 +28,12 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
+import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.editor.IEditor;
+import com.smanzana.templateeditor.editor.TemplateEditor;
+import com.smanzana.templateeditor.uiutils.UIColor;
 
 /**
  * List of elements that are themselves editable.
@@ -37,67 +41,28 @@ import com.smanzana.templateeditor.editor.IEditor;
  * This list is made to be embedded in another editor.
  * @author Skyler
  */
-public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorField<T> implements ActionListener {
-
-	public static interface EditorListEditor<K> extends IEditor<K> {
-		
-		/**
-		 * Set the current object we're editting.
-		 * Type: DataWrapper of T
-		 * @param obj
-		 */
-		public void setEdittingObject(Object obj);
-		
-		/**
-		 * Called to check whether the given values are valid.
-		 * If they are not valid, the editor cannot close without cancelling
-		 * @return
-		 */
-		public boolean isEditorValid();
-		
-		/**
-		 * Handy method for commit  changes made in the editor to the data wrapper.
-		 * Called just before dialog is closed and editor should stop interacting
-		 * with the object.
-		 */
-		public void commit();
-		
-		/**
-		 * Reset the object to the state it was when setEdittingObject was last called.
-		 * This is called when the editor cancels the operation.
-		 */
-		public void resetObject();
-		
-	}
+public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldData>>> {
 	
-	public static class DataWrapper<T> {
-		private T data;
+	// For ease of use <3
+	private static class DataWrapper {
+		public Map<Integer, FieldData> data;
 		
-		public DataWrapper(T data) {
-			this.data = data;
-		}
-
-		public T getData() {
-			return data;
-		}
-
-		public void setData(T data) {
+		public DataWrapper(Map<Integer, FieldData> data) {
 			this.data = data;
 		}
 	}
 	
-	private DefaultListModel<DataWrapper<T>> data;
-	private JList<DataWrapper<T>> dataList;
+	private DataWrapper base; // used to create new subfields
+	//private IEditorDisplayFormatter<Integer> formatter;
+	private DefaultListModel<DataWrapper> data;
+	private JList<DataWrapper> dataList;
 	private JPanel wrapper;
-	private EditorListCallback hook;
-	private EditorListFactory factory;
-	private EditorListEditor popupEditor;
+
 	
-	public EditorListField(String title, EditorListEditor popupEditor, EditorListCallback hook, EditorListFactory factory,
-			List<T> options, boolean canAddRemove) {
-		this.hook = hook;
-		this.factory = factory;
-		this.popupEditor = popupEditor;
+	public NestedEditorListField(String title, Map<Integer, FieldData> baseMap,
+			List<Map<Integer, FieldData>> fields, IEditorDisplayFormatter<Integer> formatter) {
+		//this.formatter = formatter;
+		this.base = new DataWrapper(baseMap);
 		
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
@@ -110,26 +75,20 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		data = new DefaultListModel<>();
-		dataList = new JList<DataWrapper<T>>(data);
+		dataList = new JList<DataWrapper>(data);
 		dataList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		dataList.setLayoutOrientation(JList.VERTICAL);
 		UIColor.setColors(dataList, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
 		dataList.setCellRenderer((list, e, index, isSelected, focus) -> {
 			JLabel comp;
+			String name = formatter.getEditorName(e.data);
 			
-			comp = new JLabel("  " + e.getData().getEditorName());
+			comp = new JLabel("  " + name == null ? "<Default>" : name);
 			comp.setOpaque(true);
 
-	        // check if this cell represents the current DnD drop location
-	        JList.DropLocation dropLocation = list.getDropLocation();
-	        if (dropLocation != null
-	                && !dropLocation.isInsert()
-	                && dropLocation.getIndex() == index) {
-
-	        	UIColor.setColors(comp, UIColor.Key.EDITOR_MAIN_BACKGROUND, UIColor.Key.EDITOR_MAIN_FOREGROUND);
-
+	        
 	        // check if this cell is selected
-	        } else if (isSelected) {
+	        if (isSelected) {
 	            UIColor.setColors(comp, UIColor.Key.EDITOR_MAIN_BACKGROUND, UIColor.Key.EDITOR_MAIN_FOREGROUND);
 	        // unselected, and not the DnD drop location
 	        } else {
@@ -146,21 +105,20 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 			}
 		});
 		
-		for (T t : options) {
-			data.addElement(new DataWrapper<T>(t));
+		for (Map<Integer, FieldData> row : fields) {
+			data.addElement(new DataWrapper(row));
 		}
 
-		dataList.setVisibleRowCount(20);
+		dataList.setVisibleRowCount(10);
 		dataList.setMaximumSize(dataList.getPreferredScrollableViewportSize());
 		
-		// TODO list + add/remove buttons
 		Dimension med;
-		med = new Dimension(300, dataList.getPreferredScrollableViewportSize().height + 30);
+		med = new Dimension(dataList.getPreferredScrollableViewportSize().width, dataList.getPreferredScrollableViewportSize().height + 30);
 		
 		Dimension small = new Dimension(med.width - 30, med.height - 30);
 		dataList.setPreferredSize(small);
 		JComponent panel = new JScrollPane(dataList);
-		panel.setMaximumSize(med);
+		panel.setPreferredSize(med);
 		panel.setMinimumSize(panel.getMaximumSize());
 		wrapper.add(panel);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
@@ -200,17 +158,6 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 	public JPanel getComponent() {
 		return wrapper;
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		if (hook != null) {
-			List<Object> list = new LinkedList<>();
-			Enumeration<DataWrapper<T>> it = data.elements();
-			while (it.hasMoreElements())
-				list.add(it.nextElement().getData());
-			hook.setField(list);
-		}
-	}
 	
 	public void doMousePressed(MouseEvent e) {
 		if (e.getClickCount() != 2)
@@ -219,7 +166,7 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 		if (dataList.isSelectionEmpty())
 			return;
 		
-		DataWrapper<T> val = data.get(dataList.getSelectedIndex());
+		DataWrapper val = data.get(dataList.getSelectedIndex());
 		
 		edit(val);
 	}
@@ -229,14 +176,20 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 	 * @param value
 	 * @return
 	 */
-	private boolean edit(DataWrapper<T> value) {
-		popupEditor.setEdittingObject(value);
+	private boolean edit(DataWrapper value) {
+		IEditor<Integer> nestedEditor = new TemplateEditor<Integer>(
+				new IEditorOwner() {
+					@Override
+					public void dirty() {
+						; // do nothing
+					}
+				}, value.data);
 		final StringBuffer cancelled = new StringBuffer();
 		
 		JDialog dialog = new JDialog((JFrame) null, "Editor", true);
 		
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		mainPanel.add(popupEditor.getComponent(), BorderLayout.CENTER);
+		mainPanel.add(nestedEditor.getComponent(), BorderLayout.CENTER);
 		
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.LINE_AXIS));
@@ -244,47 +197,20 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 		bottomPanel.add(Box.createRigidArea(new Dimension(20, 0)));
 		JButton button = new JButton("OK");
 		button.addActionListener(new ActionListener() {
-			private JButton owner;
-			{this.owner = button;}
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!popupEditor.isEditorValid()) {
-					this.owner.setEnabled(false);
-					return;
-				}
-				
-				popupEditor.commit();
+				// don't set canceled. Everything else will happen automatically
 				dialog.setVisible(false);	
 			}
 		});
 		bottomPanel.add(button);
 		bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 		
-		// Try to make the OK button reactive
-		mainPanel.addFocusListener(new FocusListener() {
-
-			private void react() {
-				button.setEnabled(popupEditor.isEditorValid());
-			}
-			
-			@Override
-			public void focusGained(FocusEvent arg0) {
-				react();
-			}
-
-			@Override
-			public void focusLost(FocusEvent arg0) {
-				react();
-			}
-		});
-		
 		JButton button2 = new JButton("Cancel");
 		button2.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				cancelled.append("yup");
-				popupEditor.resetObject();
 				dialog.setVisible(false);
 			}
 		});
@@ -301,15 +227,32 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 		dialog.pack();
 		dialog.setVisible(true);
 		
-		if (cancelled.length() == 0)
-			actionPerformed(null);
+		if (cancelled.length() == 0) {
+			// Hit OK. Commit data map
+			value.data = nestedEditor.fetchData();
+			update();
+		} else {
+			// Just don't commit data map.
+		}
 		
 		return cancelled.length() == 0;
 	}
 	
+	// Signal one of the nested elements has changed, and we should do our part of updating
+	private void update() {
+		dirty();
+	}
+	
+	private DataWrapper cloneBase() {
+		Map<Integer, FieldData> clone = new HashMap<>();
+		for (Integer key : base.data.keySet()) {
+			clone.put(key, base.data.get(key).clone());
+		}
+		return new DataWrapper(clone);
+	}
+	
 	private void add() {
-		@SuppressWarnings("unchecked")
-		DataWrapper<T> val = new DataWrapper<T>((T) factory.construct());
+		DataWrapper val = cloneBase();
 		
 		
 		if (edit(val))
@@ -322,7 +265,24 @@ public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorF
 	
 	private void remove(int index) {
 		data.remove(index);
-		actionPerformed(null);
+		update();
+	}
+
+	@Override
+	public List<Map<Integer, FieldData>> getObject() {
+		List<Map<Integer, FieldData>> list = new LinkedList<>();
+		Enumeration<DataWrapper> it = data.elements();
+		while (it.hasMoreElements())
+			list.add(it.nextElement().data);
+		return list;
+	}
+
+	@Override
+	protected void setCurrentObject(List<Map<Integer, FieldData>> obj) {
+		data.clear();
+		for (Map<Integer, FieldData> map : obj) {
+			data.addElement(new DataWrapper(map));
+		}
 	}
 	
 }

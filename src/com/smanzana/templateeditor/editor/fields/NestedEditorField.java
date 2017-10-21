@@ -116,6 +116,7 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 		
 		display.setText(name != null ? name : NAME_MISSING);
 		display.setToolTipText(desc != null ? desc : DESC_MISSING);
+		this.dirty();
 	}
 	
 	/**
@@ -124,12 +125,11 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 	 * @return
 	 */
 	private boolean edit() {
-		final NestedEditorField field = this;
 		IEditor<Integer> nestedEditor = new TemplateEditor<Integer>(
 				new IEditorOwner() {
 					@Override
 					public void dirty() {
-						field.dirty();
+						; // do nothing
 					}
 				}, dataMap);
 		final StringBuffer cancelled = new StringBuffer();
