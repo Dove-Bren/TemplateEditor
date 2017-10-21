@@ -2,6 +2,7 @@ package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
@@ -9,18 +10,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import com.smanzana.dungeonmaster.ui.app.swing.editors.fields.StepField;
-import com.smanzana.dungeonmaster.ui.app.swing.editors.fields.StepField.StepFieldCallback;
+import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.editor.fields.BoolField;
-import com.smanzana.templateeditor.editor.fields.BoolField.BoolFieldCallback;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
-import com.smanzana.templateeditor.editor.fields.DoubleField.DoubleFieldCallback;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.IntField;
-import com.smanzana.templateeditor.editor.fields.IntField.IntFieldCallback;
 import com.smanzana.templateeditor.editor.fields.TextField;
-import com.smanzana.templateeditor.editor.fields.TextField.TextFieldCallback;
+import com.smanzana.templateeditor.uiutils.TextUtil;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
 /**
@@ -36,7 +33,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	private JPanel editor;
 	
 	// doesn't set as visible
-	public EnumMapEditor(IEditorOwner owner, Map<T, Object> enummap) {
+	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
 		super();
 		
 		editor = new JPanel();
@@ -45,65 +42,49 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		UIColor.setColors(editor, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
 		editor.setBorder(new EmptyBorder(20, 20, 20, 20));
 		
-		EditorField comp;
-		for (T key : enummap.keySet()) {
+		EditorField<?> comp;
+		for (Entry<T,FieldData> row : enummap.entrySet()) {
+			String keyName = row.getValue().getName();
+			if (keyName == null)
+				TextUtil.pretty(row.getKey().name());
+			
 			comp = null;
-			switch (config.getFieldType(keyName)) {
+			switch (row.getValue().getType()) {
 			case BOOL:
-				comp = new BoolField(keyName, new BoolFieldCallback() {
-					@Override
-					public void setField(boolean value) {
-						config.setValue(keyName, value);
-						template.dirty();
-					}
-				}, (Boolean) config.getValue(keyName));
+				comp = new BoolField(keyName, (Boolean) row.getValue().getValue());
 				break;
 			case DOUBLE:
-				comp = new DoubleField(keyName, new DoubleFieldCallback() {
-					@Override
-					public void setField(double value) {
-						config.setValue(keyName, value);
-						template.dirty();
-					}
-				}, config.getValue(keyName).toString());
+				comp = new DoubleField(keyName, (Double) row.getValue().getValue());
 				break;
 			case INT:
-				comp = new IntField(keyName, new IntFieldCallback() {
-					@Override
-					public void setField(int value) {
-						config.setValue(keyName, value);
-						template.dirty();
-					}
-				}, config.getValue(keyName).toString());
+				comp = new IntField(keyName, (Integer) row.getValue().getValue());
 				break;
 			case STRING:
-				// See note about crappiness below.
-				if (isStepList(config)) {
-					comp = new StepField(keyName, new StepFieldCallback() {
-						@Override
-						public void setField(String value) {
-							config.setValue(keyName, value);
-							template.dirty();
-						}
-					}, StepList.deserialize((String) config.getValue(keyName)));
-				} else {
-					comp = new TextField(keyName, new TextFieldCallback() {
-						@Override
-						public void setField(String value) {
-							config.setValue(keyName, value);
-							template.dirty();
-						}
-					}, (String) config.getValue(keyName));
-				}
+				comp = new TextField(keyName, (String) row.getValue().getValue());
+				break;
+			case COMPLEX:
+				// TODO
+				break;
+			case LIST_COMPLEX:
+				// TODO
+				break;
+			case LIST_DOUBLE:
+				break;
+			case LIST_INT:
+				break;
+			case LIST_STRING:
+				break;
+			case USER:
+				comp = row.getValue().getUserDataType().getField();
 				break;
 			}
 			
 			if (comp == null)
 				continue;
 			
-			if (config.getComments(keyName) != null) {
+			if (row.getValue().getDescription() != null) {
 				String buf = "";
-				for (String line : config.getComments(keyName)) {
+				for (String line : row.getValue().getDescription()) {
 					if (!buf.isEmpty())
 						buf += System.getProperty("line.separator");
 					buf += line;
@@ -118,18 +99,9 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		this.setViewportView(editor);
 		this.validate();
 	}
-	
-	private boolean isStepList(Config<?> config) {
-		// Crappy. Oh well. Just doing what works :)
-		return (config instanceof CombatBonusConfig ||
-			    config instanceof RollTableConfig);
-	}
 
 	@Override
 	public JComponent getComponent() {
 		return this;
 	}
-	
-	
-	
 }

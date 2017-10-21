@@ -8,6 +8,9 @@ package com.smanzana.templateeditor;
  */
 public enum FieldType {
 	
+	// Basic boolean
+	BOOL,
+	
 	// Basic integer
 	INT,
 	
