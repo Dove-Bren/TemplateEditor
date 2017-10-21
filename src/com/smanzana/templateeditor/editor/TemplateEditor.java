@@ -131,7 +131,7 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 	private JPanel editor;
 	private Map<T, DataPair> fields;
 	
-	private TemplateEditor(Map<T, FieldData> fieldMap) {
+	public TemplateEditor(Map<T, FieldData> fieldMap) {
 		super();
 		fields = new HashMap<>();
 		

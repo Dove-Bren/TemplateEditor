@@ -18,7 +18,7 @@ public class FieldData {
 	private IUserData<?> userDataType;
 	
 	/** Complex type nested values for COMPLEX or LIST_COMPLEX fieldtypes */
-	private Map<Integer, FieldData> nestedTypes;
+	private Map<?, FieldData> nestedTypes;
 	
 	/** 
 	 * The current value of the field. Updated once the editor passes
@@ -36,12 +36,16 @@ public class FieldData {
 	 * Optional description. Usually displayed as a tooltip.
 	 */
 	private List<String> description;
+	
+	/** Formatter for complex data types */
+	private IEditorDisplayFormatter<?> formatter;
 
 	/**
 	 * When in doubt, use the static helper constructors:
 	 * <ul>
 	 * <li>{@link #simple(FieldType, Object)}</li>
-	 * <li>{@link #complex(Map, Map, boolean)}</li>
+	 * <li>{@link #complex(Map, Map)}</li>
+	 * <li>{@link #complexList(Map, List)}</li>
 	 * <li>{@link #user(IUserData, Object)}</li>
 	 * </ul>
 	 * @param type
@@ -49,25 +53,32 @@ public class FieldData {
 	 * @param nestedTypes
 	 * @param value
 	 */
-	private FieldData(FieldType type, IUserData<?> userDataType, Map<Integer, FieldData> nestedTypes, Object value) {
+	private FieldData(FieldType type, IUserData<?> userDataType, Map<?, FieldData> nestedTypes,
+			IEditorDisplayFormatter<?> formatter, Object value) {
 		super();
 		this.type = type;
 		this.userDataType = userDataType;
 		this.nestedTypes = nestedTypes;
 		this.value = value;
+		this.formatter = formatter;
 	}
 	
 	public static FieldData simple(FieldType type, Object value) {
-		return new FieldData(type, null, null, value);
+		return new FieldData(type, null, null, null, value);
 	}
 	
-	public static FieldData complex(Map<Integer, FieldData> subfields, Map<Integer, FieldData> value, boolean isList) {
-		return new FieldData(isList ? FieldType.LIST_COMPLEX : FieldType.COMPLEX,
-				null, subfields, value);
+	public static <T> FieldData complex(Map<T, FieldData> subfields, Map<T, FieldData> value,
+			IEditorDisplayFormatter<T> formatter) {
+		return new FieldData(FieldType.COMPLEX, null, subfields, formatter, value);
+	}
+	
+	public static <T> FieldData complexList(Map<T, FieldData> subfields, List<Map<T, FieldData>> value,
+			IEditorDisplayFormatter<T> formatter) {
+		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, value);
 	}
 	
 	public static <T> FieldData user(IUserData<T> template, T value) {
-		return new FieldData(FieldType.USER, template, null, value);
+		return new FieldData(FieldType.USER, template, null, null, value);
 	}
 	
 	public static FieldData description(FieldData data, String description) {
@@ -114,8 +125,12 @@ public class FieldData {
 		this.value = value;
 	}
 
-	public Map<Integer, FieldData> getNestedTypes() {
+	public Map<? extends Object, FieldData> getNestedTypes() {
 		return nestedTypes;
+	}
+	
+	public IEditorDisplayFormatter<?> getFormatter() {
+		return formatter;
 	}
 
 	public String getName() {

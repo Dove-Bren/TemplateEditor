@@ -28,15 +28,18 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
+import com.smanzana.templateeditor.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.editor.IEditor;
+
 /**
  * List of elements that are themselves editable.
  * When selected, a dialog is displayed for editing that element.
  * This list is made to be embedded in another editor.
  * @author Skyler
  */
-public class EditorListField<T extends IEditorDisplayable> implements ActionListener, EditorField {
+public class EditorListField<T extends IEditorDisplayFormatter> extends AEditorField<T> implements ActionListener {
 
-	public static interface EditorListEditor extends IEditor {
+	public static interface EditorListEditor<K> extends IEditor<K> {
 		
 		/**
 		 * Set the current object we're editting.
@@ -65,20 +68,6 @@ public class EditorListField<T extends IEditorDisplayable> implements ActionList
 		 */
 		public void resetObject();
 		
-	}
-	
-	public static interface EditorListCallback {
-		// list of T
-		public void setField(List<Object> valueName);
-	}
-	
-	public static interface EditorListFactory {
-		/**
-		 * Construct object of type T for setting in the editor
-		 * If this doesn't return an object of type T, exceptions WILL occur. lel
-		 * @return
-		 */
-		public Object construct();
 	}
 	
 	public static class DataWrapper<T> {
