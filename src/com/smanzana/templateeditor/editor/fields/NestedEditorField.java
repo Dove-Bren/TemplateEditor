@@ -5,30 +5,22 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
+import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import com.smanzana.templateeditor.EditorIconRegistry;
 import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.editor.IEditor;
@@ -42,14 +34,19 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * It should HAVE to expand if it's in a modal
  * @author Skyler
  * 
- * @param <T> Type produced by this field
  * @param <K> Type that indexes the nested fieldmaps
  */
-public class NestedEditorField<T, K> extends AEditorField<T> {
+public class NestedEditorField<K> extends AEditorField<Map<K, FieldData>> {
 	
-	private JPanel wrapper;
+	private static final String DESC_MISSING = "";
+	private static final String NAME_MISSING = "<default>";
+	
+	
 	private Map<K, FieldData> dataMap;
 	private IEditorDisplayFormatter<K> formatter;
+	
+	private JTextField display;
+	private JPanel wrapper;
 	
 	public NestedEditorField(String title, Map<K, FieldData> fieldMap, IEditorDisplayFormatter<K> formatter) {
 		this.dataMap = fieldMap; // Don't actually use it till we create nested editor
@@ -64,9 +61,24 @@ public class NestedEditorField<T, K> extends AEditorField<T> {
 		wrapper.add(label);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
+		JPanel comp = new JPanel(new BorderLayout());
+		display = new JTextField(20);
+		display.setEditable(false);
+		display.setText(NAME_MISSING);
+		display.setToolTipText(DESC_MISSING);
+		comp.add(display, BorderLayout.CENTER);
+		
+		JButton button = new JButton(EditorIconRegistry.get(EditorIconRegistry.Key.INSPECT));
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				edit();
+			}
+		});
+		comp.add(button, BorderLayout.EAST);
 		
 		
-		MISSINGCOMP.addMouseListener(new MouseAdapter() {
+		display.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				doMousePressed(e);
@@ -74,7 +86,7 @@ public class NestedEditorField<T, K> extends AEditorField<T> {
 		});
 		
 		
-		wrapper.add(MISSINGCOMP);
+		wrapper.add(comp);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		wrapper.add(Box.createHorizontalGlue());
 		
@@ -94,6 +106,11 @@ public class NestedEditorField<T, K> extends AEditorField<T> {
 	
 	private void updateDataMap(Map<K, FieldData> map) {
 		dataMap = map;
+		String name = formatter.getEditorName(map);
+		String desc = formatter.getEditorTooltip(map);
+		
+		display.setText(name != null ? name : NAME_MISSING);
+		display.setToolTipText(desc != null ? desc : DESC_MISSING);
 	}
 	
 	/**
@@ -154,5 +171,15 @@ public class NestedEditorField<T, K> extends AEditorField<T> {
 		}
 		
 		return cancelled.length() == 0;
+	}
+
+	@Override
+	public Map<K, FieldData> getObject() {
+		return dataMap;
+	}
+
+	@Override
+	protected void setCurrentObject(Map<K, FieldData> obj) {
+		dataMap = obj;
 	}
 }
