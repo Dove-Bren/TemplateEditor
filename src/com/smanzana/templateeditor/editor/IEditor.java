@@ -9,16 +9,16 @@ import com.smanzana.templateeditor.editor.fields.EditorField;
 
 public interface IEditor<T> {
 	
-	public static class DataPair {
-		private FieldData data;
+	public static class DataPair<T> {
+		private FieldData<T> data;
 		private EditorField<?> field;
 		
-		public DataPair(FieldData data, EditorField<?> field) {
+		public DataPair(FieldData<T> data, EditorField<?> field) {
 			this.data = data;
 			this.field = field;
 		}
 
-		public FieldData getData() {
+		public FieldData<T> getData() {
 			return data;
 		}
 
@@ -37,6 +37,6 @@ public interface IEditor<T> {
 	 * Returns finalized copy of map which maps input to a piece of FieldData 
 	 * @return
 	 */
-	public Map<T, FieldData> fetchData();
+	public Map<T, FieldData<T>> fetchData();
 
 }

@@ -36,19 +36,23 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * 
  * @param <K> Type that indexes the nested fieldmaps
  */
-public class NestedEditorField<K> extends AEditorField<Map<K, FieldData>> {
+public class NestedEditorField<K> extends AEditorField<Map<K, FieldData<K>>> {
 	
 	private static final String DESC_MISSING = "";
 	private static final String NAME_MISSING = "<default>";
 	
 	
-	private Map<K, FieldData> dataMap;
+	private Map<K, FieldData<K>> dataMap;
 	private IEditorDisplayFormatter<K> formatter;
 	
 	private JTextField display;
 	private JPanel wrapper;
 	
-	public NestedEditorField(String title, Map<K, FieldData> fieldMap, IEditorDisplayFormatter<K> formatter) {
+	public static <T> NestedEditorField<T> create(String title, Map<T, FieldData<T>> fieldMap, IEditorDisplayFormatter<T> formatter) {
+		return new NestedEditorField<T>(title, fieldMap, formatter);
+	}
+	
+	public NestedEditorField(String title, Map<K, FieldData<K>> fieldMap, IEditorDisplayFormatter<K> formatter) {
 		this.dataMap = fieldMap; // Don't actually use it till we create nested editor
 		this.formatter = formatter;
 		wrapper = new JPanel();
@@ -104,7 +108,7 @@ public class NestedEditorField<K> extends AEditorField<Map<K, FieldData>> {
 		edit();
 	}
 	
-	private void updateDataMap(Map<K, FieldData> map) {
+	private void updateDataMap(Map<K, FieldData<K>> map) {
 		dataMap = map;
 		String name = formatter.getEditorName(map);
 		String desc = formatter.getEditorTooltip(map);
@@ -174,12 +178,12 @@ public class NestedEditorField<K> extends AEditorField<Map<K, FieldData>> {
 	}
 
 	@Override
-	public Map<K, FieldData> getObject() {
+	public Map<K, FieldData<K>> getObject() {
 		return dataMap;
 	}
 
 	@Override
-	protected void setCurrentObject(Map<K, FieldData> obj) {
+	protected void setCurrentObject(Map<K, FieldData<K>> obj) {
 		dataMap = obj;
 	}
 }

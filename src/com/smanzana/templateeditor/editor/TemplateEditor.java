@@ -129,9 +129,9 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 	
 	private static final long serialVersionUID = 1237901663396174434L;
 	private JPanel editor;
-	private Map<T, DataPair> fields;
+	private Map<T, DataPair<T>> fields;
 	
-	public TemplateEditor(Map<T, FieldData> fieldMap) {
+	public TemplateEditor(Map<T, FieldData<T>> fieldMap) {
 		super();
 		fields = new HashMap<>();
 		
@@ -178,10 +178,10 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 	}
 
 	@Override
-	public Map<T, FieldData> fetchData() {
-		Map<T, FieldData> out = new HashMap<>();
-		for (Entry<T, DataPair> entry : fields.entrySet()) {
-			FieldData data = entry.getValue().getData();
+	public Map<T, FieldData<T>> fetchData() {
+		Map<T, FieldData<T>> out = new HashMap<>();
+		for (Entry<T, DataPair<T>> entry : fields.entrySet()) {
+			FieldData<T> data = entry.getValue().getData();
 			data.setValue(entry.getValue().getField().getObject());
 			out.put(entry.getKey(), data);
 		}

@@ -9,16 +9,27 @@ import java.util.Map;
  * @author Skyler
  *
  */
-public class FieldData {
+public class FieldData<T> {
+	
+	/** Structure for nested generic type information */
+	private static class ComplexData<T> {
+		/** Complex type nested values for COMPLEX or LIST_COMPLEX fieldtypes */
+		public Map<T, FieldData<T>> nestedTypes;
+		
+		/** Formatter for complex data types */
+		public IEditorDisplayFormatter<T> formatter;
+		
+		public ComplexData(Map<T, FieldData<T>> nestedTypes, IEditorDisplayFormatter<T> formatter) {
+			this.nestedTypes = nestedTypes;
+			this.formatter = formatter;
+		}
+	}
 	
 	/** Type this data is built on */
 	private FieldType type;
 	
 	/** If type is UserData, instance to use for field creation */
 	private IUserData<?> userDataType;
-	
-	/** Complex type nested values for COMPLEX or LIST_COMPLEX fieldtypes */
-	private Map<?, FieldData> nestedTypes;
 	
 	/** 
 	 * The current value of the field. Updated once the editor passes
@@ -37,8 +48,7 @@ public class FieldData {
 	 */
 	private List<String> description;
 	
-	/** Formatter for complex data types */
-	private IEditorDisplayFormatter<?> formatter;
+	private ComplexData<T> complexData;
 
 	/**
 	 * When in doubt, use the static helper constructors:
@@ -53,35 +63,35 @@ public class FieldData {
 	 * @param nestedTypes
 	 * @param value
 	 */
-	private FieldData(FieldType type, IUserData<?> userDataType, Map<?, FieldData> nestedTypes,
-			IEditorDisplayFormatter<?> formatter, Object value) {
+	private <U> FieldData(FieldType type, IUserData<U> userDataType, Map<T, FieldData<T>> nestedTypes,
+			IEditorDisplayFormatter<T> formatter, Object value) {
 		super();
 		this.type = type;
 		this.userDataType = userDataType;
-		this.nestedTypes = nestedTypes;
 		this.value = value;
-		this.formatter = formatter;
+		
+		this.complexData = new ComplexData<T>(nestedTypes, formatter);
 	}
 	
-	public static FieldData simple(FieldType type, Object value) {
-		return new FieldData(type, null, null, null, value);
+	public static FieldData<?> simple(FieldType type, Object value) {
+		return new FieldData<Object>(type, null, null, null, value);
 	}
 	
-	public static <T> FieldData complex(Map<T, FieldData> subfields, Map<T, FieldData> value,
+	public static <T> FieldData<T> complex(Map<T, FieldData<T>> subfields, Map<T, FieldData<T>> value,
 			IEditorDisplayFormatter<T> formatter) {
-		return new FieldData(FieldType.COMPLEX, null, subfields, formatter, value);
+		return new FieldData<T>(FieldType.COMPLEX, null, subfields, formatter, value);
 	}
 	
-	public static <T> FieldData complexList(Map<T, FieldData> subfields, List<Map<T, FieldData>> value,
+	public static <T> FieldData<T> complexList(Map<T, FieldData<T>> subfields, List<Map<T, FieldData<T>>> value,
 			IEditorDisplayFormatter<T> formatter) {
-		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, value);
+		return new FieldData<T>(FieldType.LIST_COMPLEX, null, subfields, formatter, value);
 	}
 	
-	public static <T> FieldData user(IUserData<T> template, T value) {
-		return new FieldData(FieldType.USER, template, null, null, value);
+	public static <T> FieldData<?> user(IUserData<T> template, T value) {
+		return new FieldData<Object>(FieldType.USER, template, null, null, value);
 	}
 	
-	public static FieldData description(FieldData data, String description) {
+	public static <T> FieldData<T> description(FieldData<T> data, String description) {
 		if (data.description == null)
 			data.description = new LinkedList<>();
 		
@@ -89,22 +99,22 @@ public class FieldData {
 		return data;
 	}
 	
-	public static FieldData desc(FieldData data, String description) {
+	public static <T> FieldData<T> desc(FieldData<T> data, String description) {
 		return description(data, description);
 	}
 	
-	public static FieldData description(FieldData data, List<String> descriptions) {
+	public static <T> FieldData<T> description(FieldData<T> data, List<String> descriptions) {
 		for (String s : descriptions)
 			desc(data, s);
 		
 		return data;
 	}
 	
-	public static FieldData desc(FieldData data, List<String> descriptions) {
+	public static <T> FieldData<T> desc(FieldData<T> data, List<String> descriptions) {
 		return description(data, descriptions);
 	}
 	
-	public static FieldData name(FieldData data, String name) {
+	public static <T> FieldData<T> name(FieldData<T> data, String name) {
 		data.name = name;
 		return data;
 	}
@@ -125,12 +135,12 @@ public class FieldData {
 		this.value = value;
 	}
 
-	public Map<? extends Object, FieldData> getNestedTypes() {
-		return nestedTypes;
+	public Map<T, FieldData<T>> getNestedTypes() {
+		return complexData.nestedTypes;
 	}
 	
-	public IEditorDisplayFormatter<?> getFormatter() {
-		return formatter;
+	public IEditorDisplayFormatter<T> getFormatter() {
+		return complexData.formatter;
 	}
 
 	public String getName() {

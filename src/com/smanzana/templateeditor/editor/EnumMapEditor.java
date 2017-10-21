@@ -17,6 +17,7 @@ import com.smanzana.templateeditor.editor.fields.BoolField;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.IntField;
+import com.smanzana.templateeditor.editor.fields.NestedEditorField;
 import com.smanzana.templateeditor.editor.fields.TextField;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -32,10 +33,10 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 
 	private static final long serialVersionUID = -4533006684394006640L;
 	private JPanel editor;
-	private Map<T, DataPair> fields;
+	private Map<T, DataPair<T>> fields;
 	
 	// doesn't set as visible
-	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
+	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData<T>> enummap) {
 		super();
 		fields = new HashMap<>();
 		
@@ -46,7 +47,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		editor.setBorder(new EmptyBorder(20, 20, 20, 20));
 		
 		EditorField<?> comp;
-		for (Entry<T,FieldData> row : enummap.entrySet()) {
+		for (Entry<T,FieldData<T>> row : enummap.entrySet()) {
 			String keyName = row.getValue().getName();
 			if (keyName == null)
 				TextUtil.pretty(row.getKey().name());
@@ -66,7 +67,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 				comp = new TextField(keyName, (String) row.getValue().getValue());
 				break;
 			case COMPLEX:
-				// TODO
+				comp = NestedEditorField.create(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
 				break;
 			case LIST_COMPLEX:
 				// TODO
@@ -97,7 +98,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			comp.getComponent().setPreferredSize(new Dimension(100, 25));
 			editor.add(comp.getComponent());
-			fields.put(row.getKey(), new DataPair(row.getValue(), comp));
+			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
 		}
 		
 		this.setViewportView(editor);
@@ -110,10 +111,10 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	}
 
 	@Override
-	public Map<T, FieldData> fetchData() {
-		Map<T, FieldData> out = new HashMap<>();
-		for (Entry<T, DataPair> entry : fields.entrySet()) {
-			FieldData data = entry.getValue().getData();
+	public Map<T, FieldData<T>> fetchData() {
+		Map<T, FieldData<T>> out = new HashMap<>();
+		for (Entry<T, DataPair<T>> entry : fields.entrySet()) {
+			FieldData<T> data = entry.getValue().getData();
 			data.setValue(entry.getValue().getField().getObject());
 			out.put(entry.getKey(), data);
 		}
