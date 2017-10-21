@@ -1,5 +1,6 @@
 package com.smanzana.templateeditor.editor;
 
+import java.awt.Dimension;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,6 +13,12 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import com.smanzana.templateeditor.FieldData;
+import com.smanzana.templateeditor.editor.fields.BoolField;
+import com.smanzana.templateeditor.editor.fields.DoubleField;
+import com.smanzana.templateeditor.editor.fields.EditorField;
+import com.smanzana.templateeditor.editor.fields.IntField;
+import com.smanzana.templateeditor.editor.fields.NestedEditorField;
+import com.smanzana.templateeditor.editor.fields.TextField;
 import com.smanzana.templateeditor.uiutils.UIColor;
 /**
  * Editor for DatumData
@@ -163,8 +170,57 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 //			
 //		}, tempList, exList)).getComponent());
 		
-		for (T key : fieldMap.keySet()) {
-			// TODO add to fields
+		EditorField<?> comp;
+		for (Entry<T, FieldData> row : fieldMap.entrySet()) {
+			String keyName = row.getValue().getName();
+			
+			comp = null;
+			switch (row.getValue().getType()) {
+			case BOOL:
+				comp = new BoolField(keyName, (Boolean) row.getValue().getValue());
+				break;
+			case DOUBLE:
+				comp = new DoubleField(keyName, (Double) row.getValue().getValue());
+				break;
+			case INT:
+				comp = new IntField(keyName, (Integer) row.getValue().getValue());
+				break;
+			case STRING:
+				comp = new TextField(keyName, (String) row.getValue().getValue());
+				break;
+			case COMPLEX:
+				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
+				break;
+			case LIST_COMPLEX:
+				// TODO
+				break;
+			case LIST_DOUBLE:
+				break;
+			case LIST_INT:
+				break;
+			case LIST_STRING:
+				break;
+			case USER:
+				comp = row.getValue().getUserDataType().getField();
+				break;
+			}
+			
+			if (comp == null)
+				continue;
+			
+			if (row.getValue().getDescription() != null) {
+				String buf = "";
+				for (String line : row.getValue().getDescription()) {
+					if (!buf.isEmpty())
+						buf += System.getProperty("line.separator");
+					buf += line;
+				}
+				comp.getComponent().setToolTipText(buf);
+			}
+			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
+			comp.getComponent().setPreferredSize(new Dimension(100, 25));
+			editor.add(comp.getComponent());
+			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
 		}
 		
 		editor.add(Box.createVerticalGlue());
