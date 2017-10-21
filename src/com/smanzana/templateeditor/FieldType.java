@@ -8,33 +8,33 @@ package com.smanzana.templateeditor;
  */
 public enum FieldType {
 	
-	// Basic boolean
+	/** Basic boolean */
 	BOOL,
 	
-	// Basic integer
+	/** Basic integer */
 	INT,
 	
-	// Basic double
+	/** Basic double */
 	DOUBLE,
 	
-	// Regular string
+	/** Regular string */
 	STRING,
 	
-	// User-defined type. See {@link IUserType}
+	/** User-defined type. See {@link IUserType} */
 	USER,
 	
-	// Type that is defined as a list of fields which each have their own type
+	/** Type that is defined as a list of fields which each have their own type */
 	COMPLEX,
 	
-	// List of basic integers
+	/** List of basic integers */
 	LIST_INT,
 	
-	// List of basic doubles
+	/** List of basic doubles */
 	LIST_DOUBLE,
 	
-	// List of strings
+	/** List of strings */
 	LIST_STRING,
 	
-	// List of complex objects. All objects have the same definition of subvalues
+	/** List of complex objects. All objects have the same definition of subvalues */
 	LIST_COMPLEX,
 }
