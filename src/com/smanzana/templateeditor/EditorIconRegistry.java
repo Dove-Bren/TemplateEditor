@@ -30,7 +30,7 @@ public final class EditorIconRegistry {
 		}
 	}
 	
-	private static final String PATH_ICON_DEFAULT = "icons/";
+	private static final String PATH_ICON_DEFAULT = "/resources/icons/";
 	private static Map<Key, ImageIcon> icons = null;
 	
 	private static void lazyInit() {

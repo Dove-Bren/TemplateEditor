@@ -31,12 +31,12 @@ public class TestMain {
 		
 		Map<Key, FieldData> map = new EnumMap<>(Key.class);
 		
-		map.put(Key.STRVAL_1, FieldData.simple("Default1"));
-		map.put(Key.STRVAL_2, FieldData.simple("Default2"));
-		map.put(Key.INTVAL_1, FieldData.simple(-1));
-		map.put(Key.STRVAL_3, FieldData.simple("Default3"));
-		map.put(Key.DOUBLEVAL_1, FieldData.simple(-1.0));
-		map.put(Key.INTVAL_2, FieldData.simple(1));
+		map.put(Key.STRVAL_1, FieldData.simple("Default1").name("Str1"));
+		map.put(Key.STRVAL_2, FieldData.simple("Default2").name("Str2").desc("This field is super important!"));
+		map.put(Key.INTVAL_1, FieldData.simple(-1).name("Int1"));
+		map.put(Key.STRVAL_3, FieldData.simple("Default3").name("Str3"));
+		map.put(Key.DOUBLEVAL_1, FieldData.simple(-1.0).name("Double1"));
+		map.put(Key.INTVAL_2, FieldData.simple(1).name("Int2"));
 		
 		Map<Integer, FieldData> nested1 = new HashMap<>();
 		nested1.put(1, FieldData.simple(true));
