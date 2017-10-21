@@ -1,6 +1,7 @@
 package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -27,14 +28,16 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * @author Skyler
  *
  */
-public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEditor {
+public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEditor<T> {
 
 	private static final long serialVersionUID = -4533006684394006640L;
 	private JPanel editor;
+	private Map<T, DataPair> fields;
 	
 	// doesn't set as visible
 	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
 		super();
+		fields = new HashMap<>();
 		
 		editor = new JPanel();
 		editor.setLayout(new BoxLayout(editor, BoxLayout.PAGE_AXIS));
@@ -94,6 +97,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			comp.getComponent().setPreferredSize(new Dimension(100, 25));
 			editor.add(comp.getComponent());
+			fields.put(row.getKey(), new DataPair(row.getValue(), comp));
 		}
 		
 		this.setViewportView(editor);
@@ -104,4 +108,17 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	public JComponent getComponent() {
 		return this;
 	}
+
+	@Override
+	public Map<T, FieldData> fetchData() {
+		Map<T, FieldData> out = new HashMap<>();
+		for (Entry<T, DataPair> entry : fields.entrySet()) {
+			FieldData data = entry.getValue().getData();
+			data.setValue(entry.getValue().getField().getObject());
+			out.put(entry.getKey(), data);
+		}
+		return out;
+	}
+	
+	
 }
