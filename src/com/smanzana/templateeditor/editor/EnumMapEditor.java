@@ -99,6 +99,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			comp.getComponent().setPreferredSize(new Dimension(100, 25));
 			editor.add(comp.getComponent());
 			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
+			comp.setOwner(owner);
 		}
 		
 		this.setViewportView(editor);

@@ -13,6 +13,7 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import com.smanzana.templateeditor.FieldData;
+import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.editor.fields.BoolField;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
@@ -138,7 +139,7 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 	private JPanel editor;
 	private Map<T, DataPair<T>> fields;
 	
-	public TemplateEditor(Map<T, FieldData> fieldMap) {
+	public TemplateEditor(IEditorOwner owner, Map<T, FieldData> fieldMap) {
 		super();
 		fields = new HashMap<>();
 		
@@ -221,6 +222,7 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 			comp.getComponent().setPreferredSize(new Dimension(100, 25));
 			editor.add(comp.getComponent());
 			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
+			comp.setOwner(owner);
 		}
 		
 		editor.add(Box.createVerticalGlue());

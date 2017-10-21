@@ -7,12 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.WindowConstants;
 
 import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
+import com.smanzana.templateeditor.uiutils.UIColor;
 
 public class TestMain {
 	
@@ -95,6 +98,12 @@ public class TestMain {
 			public void windowOpened(WindowEvent arg0) {
 			}
 		});
+		
+		JMenuBar bar = new JMenuBar();
+		JMenu menu = new JMenu("Edit");
+		bar.add(menu);
+		menu.add(UIColor.createMenuItem("Color"));
+		frame.setJMenuBar(bar);
 		
 		frame.pack();
 		frame.setVisible(true);

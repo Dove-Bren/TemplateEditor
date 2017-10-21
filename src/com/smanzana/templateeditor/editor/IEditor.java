@@ -34,7 +34,7 @@ public interface IEditor<T> {
 	public JComponent getComponent();
 	
 	/**
-	 * Returns finalized copy of map which maps input to a piece of FieldData 
+	 * Returns finalized copy of map which maps input to a piece of FieldData.
 	 * @return
 	 */
 	public Map<T, FieldData> fetchData();
