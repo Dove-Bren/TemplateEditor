@@ -98,32 +98,32 @@ public class FieldData {
 		return new FieldData(FieldType.USER, template, null, null, value);
 	}
 	
-	public static FieldData description(FieldData data, String description) {
-		if (data.description == null)
-			data.description = new LinkedList<>();
+	public FieldData description(String description) {
+		if (this.description == null)
+			this.description = new LinkedList<>();
 		
-		data.description.add(description);
-		return data;
+		this.description.add(description);
+		return this;
 	}
 	
-	public static FieldData desc(FieldData data, String description) {
-		return description(data, description);
+	public FieldData desc(String description) {
+		return description(description);
 	}
 	
-	public static FieldData description(FieldData data, List<String> descriptions) {
+	public FieldData description(List<String> descriptions) {
 		for (String s : descriptions)
-			desc(data, s);
+			desc(s);
 		
-		return data;
+		return this;
 	}
 	
-	public static FieldData desc(FieldData data, List<String> descriptions) {
-		return description(data, descriptions);
+	public FieldData desc(List<String> descriptions) {
+		return description(descriptions);
 	}
 	
-	public static FieldData name(FieldData data, String name) {
-		data.name = name;
-		return data;
+	public FieldData name(String name) {
+		this.name = name;
+		return this;
 	}
 
 	public FieldType getType() {
