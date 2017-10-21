@@ -94,6 +94,9 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	        } else {
 	        	UIColor.setColors(comp, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
 	        };
+	        
+	        String desc = formatter.getEditorTooltip(e.data);
+	        comp.setToolTipText(desc == null ? name : desc);
 			
 			return comp;
 		});
@@ -264,6 +267,9 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	}
 	
 	private void remove(int index) {
+		if (index == -1)
+			return;
+		
 		data.remove(index);
 		update();
 	}

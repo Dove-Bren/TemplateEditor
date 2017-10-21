@@ -108,7 +108,8 @@ public class FieldData implements Cloneable {
 		if (this.description == null)
 			this.description = new LinkedList<>();
 		
-		this.description.add(description);
+		if (description != null)
+			this.description.add(description);
 		return this;
 	}
 	
@@ -117,8 +118,9 @@ public class FieldData implements Cloneable {
 	}
 	
 	public FieldData description(List<String> descriptions) {
-		for (String s : descriptions)
-			desc(s);
+		if (description != null)
+			for (String s : descriptions)
+				desc(s);
 		
 		return this;
 	}
@@ -166,9 +168,12 @@ public class FieldData implements Cloneable {
 	
 	@Override
 	public FieldData clone() {
-		Map<Integer, FieldData> cloneNestedTypes = new HashMap<>();
-		for (Integer key : nestedTypes.keySet()) {
-			cloneNestedTypes.put(key, nestedTypes.get(key).clone());
+		Map<Integer, FieldData> cloneNestedTypes = null;
+		if (nestedTypes != null) {
+			cloneNestedTypes = new HashMap<>();
+			for (Integer key : nestedTypes.keySet()) {
+				cloneNestedTypes.put(key, nestedTypes.get(key).clone());
+			}
 		}
 		return new FieldData(type, userDataType, cloneNestedTypes, formatter, value).name(name).desc(description);
 	}

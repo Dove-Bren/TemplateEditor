@@ -11,6 +11,8 @@ import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 import com.smanzana.templateeditor.FieldData;
@@ -33,6 +35,12 @@ public class TestMain {
 	}
 
 	public static void main(String[] args) {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+				| UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
 		JFrame frame = new JFrame("TemplateEditor Test");
 		
 		Map<Key, FieldData> map = new EnumMap<>(Key.class);
