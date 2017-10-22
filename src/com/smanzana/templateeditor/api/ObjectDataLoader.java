@@ -22,6 +22,16 @@ import com.smanzana.templateeditor.uiutils.TextUtil;
  *
  */
 public class ObjectDataLoader<T> {
+	
+	private static class FieldWrapper {
+		public Field field;
+		public Object template;
+		
+		public FieldWrapper(Field field, Object template) {
+			this.field = field;
+			this.template = template;
+		}
+	}
 
 	private T templateObject; // Raw object for dissolution
 	private List<T> valueList; // Raw list of values
@@ -84,9 +94,10 @@ public class ObjectDataLoader<T> {
 		// Scan for annotations
 		// For now let's just go over everything
 		// TODO annotations
-		List<Field> fields = new LinkedList<>();
+		List<FieldWrapper> fields = new LinkedList<>();
 		collectFields(fields, templateObject.getClass());
-		for (Field f : fields) {
+		for (FieldWrapper wrapper : fields) {
+			Field f = wrapper.field;
 			f.setAccessible(true);
 			Object val = null;
 			try {
@@ -121,14 +132,14 @@ public class ObjectDataLoader<T> {
 		valid = true; // Didn't error, must be valid
 	}
 	
-	private void collectFields(List<Field> list, Class<?> clazz) {
+	private void collectFields(List<FieldWrapper> list, Class<?> clazz) {
 		
 		if (clazz == Object.class
 				|| clazz.isPrimitive())
 			return;
 		
 		for (Field f : clazz.getDeclaredFields()) {
-			list.add(f);
+			list.add(new FieldWrapper(f, null)); // TODO pass in template object if exists
 		}
 		
 		collectFields(list, clazz.getSuperclass());
@@ -201,7 +212,15 @@ public class ObjectDataLoader<T> {
 				return FieldData.listInt((List<Integer>) value).name(name);
 			if (subclazz.equals(Double.class))
 				return FieldData.listDouble((List<Double>) value).name(name);
-			System.err.println("Unsupported nested list type: " + subclazz + " from " + clazz);
+			
+			System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
+			if (subclazz.isPrimitive()) {
+				System.err.println("This primitive type isn't supported :(");
+			} else {
+				System.err.println("List of complex types should be passed through via the "
+						+ "two-argument constructor");
+			}
+			
 			return null;
 		}
 		

@@ -39,6 +39,7 @@ public class TestMain {
 		LISTINT_1,
 		SUBSET_1,
 		AUTO_1,
+		LISTAUTO_1,
 	}
 
 	public static void main(String[] args) {
@@ -147,6 +148,13 @@ public class TestMain {
 			System.exit(1);
 		
 		map.put(Key.AUTO_1, FieldData.complexObject(loader).name("Auto Value"));
+		
+		List<TestObject> testList = new LinkedList<>();
+		TestObject template = new TestObject("name", "desc", 1, true);
+		testList.add(new TestObject("name1", "desc1", 1, false));
+		testList.add(new TestObject("name2", "desc2", 4, true));
+		testList.add(new TestObject("name3", "desc3", 9, true));
+		map.put(Key.LISTAUTO_1, FieldData.complexObject(new ObjectDataLoader<TestObject>(template, testList)));
 		
 		
 		///////////////////////////////////////
