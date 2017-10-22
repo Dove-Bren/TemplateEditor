@@ -1,4 +1,4 @@
-package com.smanzana.templateeditor;
+package com.smanzana.templateeditor.api;
 
 import com.smanzana.templateeditor.editor.fields.EditorField;
 

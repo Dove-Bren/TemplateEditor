@@ -13,8 +13,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorOwner;
+import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.editor.fields.BoolField;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
@@ -72,6 +72,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 				break;
 			case COMPLEX:
 				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
+				( (EditorField<Map<Integer, FieldData>>) comp).setObject(row.getValue().getNestedTypes());
 				break;
 			case LIST_COMPLEX:
 				comp = new NestedEditorListField(keyName, row.getValue().getNestedTypes(), (List<Map<Integer, FieldData>>) row.getValue().getValue(), row.getValue().getFormatter());

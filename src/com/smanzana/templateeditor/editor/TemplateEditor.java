@@ -2,6 +2,7 @@ package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -12,13 +13,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import com.smanzana.templateeditor.FieldData;
 import com.smanzana.templateeditor.IEditorOwner;
+import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.editor.fields.BoolField;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.IntField;
 import com.smanzana.templateeditor.editor.fields.NestedEditorField;
+import com.smanzana.templateeditor.editor.fields.NestedEditorListField;
 import com.smanzana.templateeditor.editor.fields.TextField;
 import com.smanzana.templateeditor.uiutils.UIColor;
 /**
@@ -139,6 +141,7 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 	private JPanel editor;
 	private Map<T, DataPair<T>> fields;
 	
+	@SuppressWarnings("unchecked")
 	public TemplateEditor(IEditorOwner owner, Map<T, FieldData> fieldMap) {
 		super();
 		fields = new HashMap<>();
@@ -191,9 +194,10 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 				break;
 			case COMPLEX:
 				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
+				( (EditorField<Map<Integer, FieldData>>) comp).setObject(row.getValue().getNestedTypes());
 				break;
 			case LIST_COMPLEX:
-				// TODO
+				comp = new NestedEditorListField(keyName, row.getValue().getNestedTypes(), (List<Map<Integer, FieldData>>) row.getValue().getValue(), row.getValue().getFormatter());
 				break;
 			case LIST_DOUBLE:
 				break;

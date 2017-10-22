@@ -1,4 +1,4 @@
-package com.smanzana.templateeditor;
+package com.smanzana.templateeditor.api;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,7 +10,7 @@ import java.util.Map;
  * @author Skyler
  *
  */
-public class FieldData implements Cloneable {
+public class FieldData2 implements Cloneable {
 	
 	/** Type this data is built on */
 	private FieldType type;
@@ -20,7 +20,7 @@ public class FieldData implements Cloneable {
 	
 	
 	/** Complex type nested values for COMPLEX or LIST_COMPLEX fieldtypes */
-	private Map<Integer, FieldData> nestedTypes;
+	private Map<Integer, FieldData2> nestedTypes;
 	
 	/** Formatter for complex data types */
 	private IEditorDisplayFormatter<Integer> formatter;
@@ -55,7 +55,7 @@ public class FieldData implements Cloneable {
 	 * @param nestedTypes
 	 * @param value
 	 */
-	private <U> FieldData(FieldType type, IUserData<U> userDataType, Map<Integer, FieldData> nestedTypes,
+	private <U> FieldData2(FieldType type, IUserData<U> userDataType, Map<Integer, FieldData2> nestedTypes,
 			IEditorDisplayFormatter<Integer> formatter, Object value) {
 		super();
 		this.type = type;
@@ -65,46 +65,46 @@ public class FieldData implements Cloneable {
 		this.formatter = formatter;
 	}
 	
-	public static FieldData simple(FieldType type, Object value) {
-		return new FieldData(type, null, null, null, value);
+	public static FieldData2 simple(FieldType type, Object value) {
+		return new FieldData2(type, null, null, null, value);
 	}
 	
-	public static FieldData simple(boolean value) {
-		return new FieldData(FieldType.BOOL, null, null, null, value);
+	public static FieldData2 simple(boolean value) {
+		return new FieldData2(FieldType.BOOL, null, null, null, value);
 	}
 	
-	public static FieldData simple(int value) {
-		return new FieldData(FieldType.INT, null, null, null, value);
+	public static FieldData2 simple(int value) {
+		return new FieldData2(FieldType.INT, null, null, null, value);
 	}
 	
-	public static FieldData simple(double value) {
-		return new FieldData(FieldType.DOUBLE, null, null, null, value);
+	public static FieldData2 simple(double value) {
+		return new FieldData2(FieldType.DOUBLE, null, null, null, value);
 	}
 	
-	public static FieldData simple(String value) {
-		return new FieldData(FieldType.STRING, null, null, null, value);
+	public static FieldData2 simple(String value) {
+		return new FieldData2(FieldType.STRING, null, null, null, value);
 	}
 	
-	public static FieldData complex(Map<Integer, FieldData> subfields,
+	public static FieldData2 complex(Map<Integer, FieldData2> subfields,
 			IEditorDisplayFormatter<Integer> formatter) {
-		return new FieldData(FieldType.COMPLEX, null, subfields, formatter, null);
+		return new FieldData2(FieldType.COMPLEX, null, subfields, formatter, null);
 	}
 	
-	public static FieldData complexList(Map<Integer, FieldData> subfields,
+	public static FieldData2 complexList(Map<Integer, FieldData2> subfields,
 			IEditorDisplayFormatter<Integer> formatter) {
 		return complexList(subfields, formatter, null);
 	}
 	
-	public static FieldData complexList(Map<Integer, FieldData> subfields,
-			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData>> startValue) {
-		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, startValue);
+	public static FieldData2 complexList(Map<Integer, FieldData2> subfields,
+			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData2>> startValue) {
+		return new FieldData2(FieldType.LIST_COMPLEX, null, subfields, formatter, startValue);
 	}
 	
-	public static <T> FieldData user(IUserData<T> template, T value) {
-		return new FieldData(FieldType.USER, template, null, null, value);
+	public static <T> FieldData2 user(IUserData<T> template, T value) {
+		return new FieldData2(FieldType.USER, template, null, null, value);
 	}
 	
-	public FieldData description(String description) {
+	public FieldData2 description(String description) {
 		if (this.description == null)
 			this.description = new LinkedList<>();
 		
@@ -113,11 +113,11 @@ public class FieldData implements Cloneable {
 		return this;
 	}
 	
-	public FieldData desc(String description) {
+	public FieldData2 desc(String description) {
 		return description(description);
 	}
 	
-	public FieldData description(List<String> descriptions) {
+	public FieldData2 description(List<String> descriptions) {
 		if (description != null)
 			for (String s : descriptions)
 				desc(s);
@@ -125,11 +125,11 @@ public class FieldData implements Cloneable {
 		return this;
 	}
 	
-	public FieldData desc(List<String> descriptions) {
+	public FieldData2 desc(List<String> descriptions) {
 		return description(descriptions);
 	}
 	
-	public FieldData name(String name) {
+	public FieldData2 name(String name) {
 		this.name = name;
 		return this;
 	}
@@ -150,7 +150,7 @@ public class FieldData implements Cloneable {
 		this.value = value;
 	}
 
-	public Map<Integer, FieldData> getNestedTypes() {
+	public Map<Integer, FieldData2> getNestedTypes() {
 		return nestedTypes;
 	}
 	
@@ -167,14 +167,14 @@ public class FieldData implements Cloneable {
 	}
 	
 	@Override
-	public FieldData clone() {
-		Map<Integer, FieldData> cloneNestedTypes = null;
+	public FieldData2 clone() {
+		Map<Integer, FieldData2> cloneNestedTypes = null;
 		if (nestedTypes != null) {
 			cloneNestedTypes = new HashMap<>();
 			for (Integer key : nestedTypes.keySet()) {
 				cloneNestedTypes.put(key, nestedTypes.get(key).clone());
 			}
 		}
-		return new FieldData(type, userDataType, cloneNestedTypes, formatter, value).name(name).desc(description);
+		return new FieldData2(type, userDataType, cloneNestedTypes, formatter, value).name(name).desc(description);
 	}
 }

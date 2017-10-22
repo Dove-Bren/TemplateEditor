@@ -4,7 +4,7 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 
-import com.smanzana.templateeditor.FieldData;
+import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 
 public interface IEditor<T> {

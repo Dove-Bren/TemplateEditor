@@ -30,7 +30,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.TransferHandler;
 
 import com.smanzana.templateeditor.EditorIconRegistry;
-import com.smanzana.templateeditor.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
 /**
@@ -39,7 +39,7 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * You select elements from there and add them to the working list.
  * @author Skyler
  */
-public class GrabListField<T extends IEditorDisplayFormatter> extends AEditorField<List<T>> implements ActionListener {
+public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEditorField<List<T>> implements ActionListener {
 	private static class GrabListData implements Serializable {
 		private static final long serialVersionUID = 1051923L;
 		private static String PREFIX = "_GrabFieldData";

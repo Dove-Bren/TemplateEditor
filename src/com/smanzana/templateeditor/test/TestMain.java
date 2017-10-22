@@ -15,9 +15,9 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
-import com.smanzana.templateeditor.FieldData;
-import com.smanzana.templateeditor.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.IEditorOwner;
+import com.smanzana.templateeditor.api.FieldData;
+import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
@@ -77,36 +77,7 @@ public class TestMain {
 		nestedobj.put(1, FieldData.simple("Default Name"));
 		nestedobj.put(2, FieldData.simple(false));
 		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		complexList.add(nestedobj);
-		
-		nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		complexList.add(nestedobj);
-		
-		nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		complexList.add(nestedobj);
-		
-		nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		complexList.add(nestedobj);
-		
-		nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		complexList.add(nestedobj);
-		
-		nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
+		nestedobj.put(4, map.get(Key.COMPLEX_1).clone());
 		complexList.add(nestedobj);
 		
 		map.put(Key.COMPLEX_2, FieldData.complexList(nested2, new IEditorDisplayFormatter<Integer>() {

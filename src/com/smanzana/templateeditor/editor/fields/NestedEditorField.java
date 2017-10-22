@@ -21,9 +21,9 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import com.smanzana.templateeditor.EditorIconRegistry;
-import com.smanzana.templateeditor.FieldData;
-import com.smanzana.templateeditor.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.IEditorOwner;
+import com.smanzana.templateeditor.api.FieldData;
+import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.editor.IEditor;
 import com.smanzana.templateeditor.editor.TemplateEditor;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -192,6 +192,6 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 
 	@Override
 	protected void setCurrentObject(Map<Integer, FieldData> obj) {
-		dataMap = obj;
+		updateDataMap(obj);
 	}
 }
