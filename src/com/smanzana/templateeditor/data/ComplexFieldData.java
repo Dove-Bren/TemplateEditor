@@ -24,6 +24,7 @@ public final class ComplexFieldData extends FieldData {
 	private IEditorDisplayFormatter<Integer> formatter;
 	
 	private List<Map<Integer, FieldData>> listValue;
+	private boolean isList;
 	
 	public ComplexFieldData(Map<Integer, FieldData> submap, IEditorDisplayFormatter<Integer> formatter) {
 		this(submap, formatter, null);
@@ -34,6 +35,7 @@ public final class ComplexFieldData extends FieldData {
 		this.nestedTypes = submap;
 		this.formatter = formatter;
 		this.listValue = listValue;
+		isList = (listValue != null);
 	}
 
 	public Map<Integer, FieldData> getNestedTypes() {
@@ -53,19 +55,28 @@ public final class ComplexFieldData extends FieldData {
 				cloneNestedTypes.put(key, nestedTypes.get(key).clone());
 			}
 		}
-		return new ComplexFieldData(cloneNestedTypes, formatter, listValue).name(getName()).desc(getDescription());
+		return new ComplexFieldData(cloneNestedTypes, formatter, isList ? listValue : null).name(getName()).desc(getDescription());
 	}
 
 	@Override
 	public EditorField<?> constructField() {
-		if (listValue == null) {
+		if (isList) {
+			return new NestedEditorListField("DELETE ME", nestedTypes, listValue, formatter);
+		} else {
 			// Single complex.
 			EditorField<Map<Integer, FieldData>> comp = new NestedEditorField("DELETE ME", nestedTypes, formatter);
 			comp.setObject(nestedTypes);
 			return comp;
 		}
-		else {
-			return new NestedEditorListField("DELETE ME", nestedTypes, listValue, formatter);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void fillFromField(EditorField<?> field) {
+		if (isList) {
+			listValue = (List<Map<Integer, FieldData>>) field.getObject();
+		} else {
+			nestedTypes = (Map<Integer, FieldData>) field.getObject();
 		}
 	}
 }

@@ -92,8 +92,8 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 		
 		
 		wrapper.add(comp);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
-		wrapper.add(Box.createHorizontalGlue());
+		//wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
+		//wrapper.add(Box.createHorizontalGlue());
 		
 		wrapper.validate();
 	}

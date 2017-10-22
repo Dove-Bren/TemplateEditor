@@ -2,7 +2,11 @@ package com.smanzana.templateeditor.api;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import com.smanzana.templateeditor.data.ComplexFieldData;
+import com.smanzana.templateeditor.data.SimpleFieldData;
+import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 
 /**
@@ -46,44 +50,40 @@ public abstract class FieldData implements Cloneable {
 //		this.formatter = formatter;
 //	}
 //	
-//	public static FieldData simple(FieldType type, Object value) {
-//		return new FieldData(type, null, null, null, value);
-//	}
-//	
-//	public static FieldData simple(boolean value) {
-//		return new FieldData(FieldType.BOOL, null, null, null, value);
-//	}
-//	
-//	public static FieldData simple(int value) {
-//		return new FieldData(FieldType.INT, null, null, null, value);
-//	}
-//	
-//	public static FieldData simple(double value) {
-//		return new FieldData(FieldType.DOUBLE, null, null, null, value);
-//	}
-//	
-//	public static FieldData simple(String value) {
-//		return new FieldData(FieldType.STRING, null, null, null, value);
-//	}
-//	
-//	public static FieldData complex(Map<Integer, FieldData> subfields,
-//			IEditorDisplayFormatter<Integer> formatter) {
-//		return new FieldData(FieldType.COMPLEX, null, subfields, formatter, null);
-//	}
-//	
-//	public static FieldData complexList(Map<Integer, FieldData> subfields,
-//			IEditorDisplayFormatter<Integer> formatter) {
-//		return complexList(subfields, formatter, null);
-//	}
-//	
-//	public static FieldData complexList(Map<Integer, FieldData> subfields,
-//			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData>> startValue) {
-//		return new FieldData(FieldType.LIST_COMPLEX, null, subfields, formatter, startValue);
-//	}
-//	
-//	public static <T> FieldData user(IUserData<T> template, T value) {
-//		return new FieldData(FieldType.USER, template, null, null, value);
-//	}
+	public static SimpleFieldData simple(FieldType type, Object value) {
+		return new SimpleFieldData(type, value);
+	}
+	
+	public static SimpleFieldData simple(boolean value) {
+		return new SimpleFieldData(FieldType.BOOL, value);
+	}
+	
+	public static SimpleFieldData simple(int value) {
+		return new SimpleFieldData(FieldType.INT, value);
+	}
+	
+	public static SimpleFieldData simple(double value) {
+		return new SimpleFieldData(FieldType.DOUBLE, value);
+	}
+	
+	public static SimpleFieldData simple(String value) {
+		return new SimpleFieldData(FieldType.STRING, value);
+	}
+	
+	public static ComplexFieldData complex(Map<Integer, FieldData> subfields,
+			IEditorDisplayFormatter<Integer> formatter) {
+		return new ComplexFieldData(subfields, formatter);
+	}
+	
+	public static ComplexFieldData complexList(Map<Integer, FieldData> subfields,
+			IEditorDisplayFormatter<Integer> formatter) {
+		return complexList(subfields, formatter, new LinkedList<Map<Integer, FieldData>>());
+	}
+	
+	public static ComplexFieldData complexList(Map<Integer, FieldData> subfields,
+			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData>> startValue) {
+		return new ComplexFieldData(subfields, formatter, startValue);
+	}
 	
 	public FieldData description(String description) {
 		if (this.description == null)
@@ -131,4 +131,13 @@ public abstract class FieldData implements Cloneable {
 	 * @return
 	 */
 	public abstract EditorField<?> constructField();
+	
+	/**
+	 * Takes a field (should be same produced with {@link #constructField()}
+	 * and modifies internal data to match. That is, takes state of the field
+	 * and mirrors it in internal data.<br />
+	 * This is called, for example, right before returning finalized data from the editor.
+	 * @param field
+	 */
+	public abstract void fillFromField(EditorField<?> field);
 }

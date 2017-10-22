@@ -67,7 +67,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
+		//wrapper.add(Box.createHorizontalGlue());
 		UIColor.setColors(wrapper, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 		JLabel label = new JLabel(title);
 		label.setFont(label.getFont().deriveFont(Font.BOLD));
@@ -151,9 +151,9 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		panel.add(Box.createVerticalGlue());
 		
 		wrapper.add(panel);
-		wrapper.add(Box.createRigidArea(new Dimension(label.getPreferredSize().width, 0)));
+		//wrapper.add(Box.createRigidArea(new Dimension(label.getPreferredSize().width, 0)));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
+		//wrapper.add(Box.createHorizontalGlue());
 		
 		wrapper.validate();
 	}

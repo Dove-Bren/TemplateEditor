@@ -30,7 +30,7 @@ public class BoolField extends AEditorField<Boolean> implements ActionListener {
 		JLabel label = new JLabel(title);
 		label.setFont(label.getFont().deriveFont(Font.BOLD));
 		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
+		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
 		
 		falsefield = new JRadioButton("False");
 		falsefield.addActionListener(this);

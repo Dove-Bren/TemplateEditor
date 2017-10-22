@@ -2,7 +2,6 @@ package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -15,13 +14,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
-import com.smanzana.templateeditor.editor.fields.BoolField;
-import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
-import com.smanzana.templateeditor.editor.fields.IntField;
-import com.smanzana.templateeditor.editor.fields.NestedEditorField;
-import com.smanzana.templateeditor.editor.fields.NestedEditorListField;
-import com.smanzana.templateeditor.editor.fields.TextField;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
@@ -39,7 +32,6 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 	private Map<T, DataPair<T>> fields;
 	
 	// doesn't set as visible
-	@SuppressWarnings("unchecked")
 	public EnumMapEditor(IEditorOwner owner, Map<T, FieldData> enummap) {
 		super();
 		fields = new HashMap<>();
@@ -55,38 +47,9 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			String keyName = row.getValue().getName();
 			if (keyName == null)
 				TextUtil.pretty(row.getKey().name());
+			// TODO use keyName
 			
-			comp = null;
-			switch (row.getValue().getType()) {
-			case BOOL:
-				comp = new BoolField(keyName, (Boolean) row.getValue().getValue());
-				break;
-			case DOUBLE:
-				comp = new DoubleField(keyName, (Double) row.getValue().getValue());
-				break;
-			case INT:
-				comp = new IntField(keyName, (Integer) row.getValue().getValue());
-				break;
-			case STRING:
-				comp = new TextField(keyName, (String) row.getValue().getValue());
-				break;
-			case COMPLEX:
-				comp = new NestedEditorField(keyName, row.getValue().getNestedTypes(), row.getValue().getFormatter());
-				( (EditorField<Map<Integer, FieldData>>) comp).setObject(row.getValue().getNestedTypes());
-				break;
-			case LIST_COMPLEX:
-				comp = new NestedEditorListField(keyName, row.getValue().getNestedTypes(), (List<Map<Integer, FieldData>>) row.getValue().getValue(), row.getValue().getFormatter());
-				break;
-			case LIST_DOUBLE:
-				break;
-			case LIST_INT:
-				break;
-			case LIST_STRING:
-				break;
-			case USER:
-				comp = row.getValue().getUserDataType().getField();
-				break;
-			}
+			comp = row.getValue().constructField();
 			
 			if (comp == null)
 				continue;
@@ -122,7 +85,7 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		Map<T, FieldData> out = new HashMap<>();
 		for (Entry<T, DataPair<T>> entry : fields.entrySet()) {
 			FieldData data = entry.getValue().getData();
-			data.setValue(entry.getValue().getField().getObject());
+			data.fillFromField(entry.getValue().getField());
 			out.put(entry.getKey(), data);
 		}
 		return out;

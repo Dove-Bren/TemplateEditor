@@ -129,4 +129,9 @@ public final class SimpleFieldData extends FieldData {
 		
 		return comp;
 	}
+
+	@Override
+	public void fillFromField(EditorField<?> field) {
+		setValue(field.getObject());
+	}
 }

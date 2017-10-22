@@ -17,6 +17,7 @@ import javax.swing.WindowConstants;
 
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
+import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -59,7 +60,7 @@ public class TestMain {
 		map.put(Key.COMPLEX_1, FieldData.complex(nested1, new IEditorDisplayFormatter<Integer>() {
 			@Override
 			public String getEditorName(Map<Integer, FieldData> dataMap) {
-				return (String) dataMap.get(3).getValue();
+				return (String) ( (SimpleFieldData) dataMap.get(3)).getValue();
 			}
 			@Override
 			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
@@ -85,7 +86,7 @@ public class TestMain {
 			public String getEditorName(Map<Integer, FieldData> dataMap) {
 				if (dataMap == null)
 					return null;
-				return (String) dataMap.get(1).getValue();
+				return (String) ( (SimpleFieldData) dataMap.get(1)).getValue();
 			}
 			@Override
 			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
