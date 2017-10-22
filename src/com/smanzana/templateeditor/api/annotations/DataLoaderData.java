@@ -1,4 +1,4 @@
-package com.smanzana.templateeditor.api;
+package com.smanzana.templateeditor.api.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

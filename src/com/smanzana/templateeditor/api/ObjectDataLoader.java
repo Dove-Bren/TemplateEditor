@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.smanzana.templateeditor.api.annotations.DataLoaderData;
+import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
+import com.smanzana.templateeditor.api.annotations.DataLoaderList;
+import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 
@@ -57,7 +61,6 @@ public class ObjectDataLoader<T> {
 		formattingDescIndex = -1;
 		template = new HashMap<>();
 		fieldMap = new HashMap<>();
-		// TODO
 	}
 	
 	public ObjectDataLoader(T templateObject) {
@@ -104,8 +107,6 @@ public class ObjectDataLoader<T> {
 	// Parse templateObject and create mapping
 	private void dissolve() throws SecurityException {
 		// Scan for annotations
-		// For now let's just go over everything
-		// TODO annotations
 		List<FieldWrapper> fields = new LinkedList<>();
 		collectFields(fields, templateObject.getClass(), templateObject);
 		for (FieldWrapper wrapper : fields) {
@@ -129,7 +130,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			int key = wrapper.key;
-			FieldData data = wrapField(f, val, pullName(wrapper), pullDesc(wrapper));
+			FieldData data = wrapField(f, val, wrapper.template, pullName(wrapper), pullDesc(wrapper));
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -229,14 +230,11 @@ public class ObjectDataLoader<T> {
 			if (descKey == -1)
 				descKey = key;
 			
-			buffer.put(f.getName(), new FieldWrapper(f, key, template, name, desc)); // TODO pass in template object if exists
+			buffer.put(f.getName(), new FieldWrapper(f, key, template, name, desc));
 			
 		}
 		
 		list.addAll(buffer.values());
-		
-		// DISCONNECT
-		// no way to know if values ended up in or were ignored
 		
 		// If nameField or DescField made it in (not ignored), set index appropriately
 		if (nameKey != -1 && formattingNameIndex == -1)
@@ -258,7 +256,6 @@ public class ObjectDataLoader<T> {
 		
 		listTemplates = new ArrayList<>(valueList.size());
 		
-		// Does this not iterate if empty?? // TODO I forget
 		for (T item : valueList) {
 			// For each item, create a copy of template by pulling out fields
 			
@@ -267,7 +264,7 @@ public class ObjectDataLoader<T> {
 				// Type-safe cause of generics; we know these fields exist in list objects
 				Field field = row.getValue().field;
 				try {
-					rowMap.put(row.getKey(), wrapField(field, field.get(item),
+					rowMap.put(row.getKey(), wrapField(field, field.get(item), row.getValue().template,
 							pullName(row.getValue()), pullDesc(row.getValue())));
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
@@ -297,7 +294,7 @@ public class ObjectDataLoader<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <U> FieldData wrapField(Field f, Object value, String name, String description) {
+	private <U> FieldData wrapField(Field f, Object value, Object listTemplate, String name, String description) {
 		Class<?> clazz = f.getType();
 		if (clazz.isPrimitive()) {
 			
@@ -325,14 +322,22 @@ public class ObjectDataLoader<T> {
 			if (subclazz.equals(Double.class))
 				return FieldData.listDouble((List<Double>) value).name(name).desc(description);
 			
-			System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
 			if (subclazz.isPrimitive()) {
+				System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
 				System.err.println("This primitive type isn't supported :(");
-			} else {
-				System.err.println("List of complex types should be passed through via the "
-						+ "two-argument constructor");
+				return null;
 			}
 			
+			// Try to use template
+			if (listTemplate != null) {
+				@SuppressWarnings("rawtypes")
+				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value);
+				return FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData())
+						.name(name).desc(description);
+			}
+			
+			System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
+			System.err.println("Mark complex lists with @DataLoaderList and point to a template base class");
 			return null;
 		}
 		
