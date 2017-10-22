@@ -1,5 +1,6 @@
 package com.smanzana.templateeditor.test;
 
+import java.awt.Dimension;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.EnumMap;
@@ -17,9 +18,8 @@ import javax.swing.WindowConstants;
 
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
-import com.smanzana.templateeditor.data.SimpleFieldData;
-import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
@@ -100,7 +100,9 @@ public class TestMain {
 		intlist.add(99);
 		intlist.add(98);
 		intlist.add(97);
-		map.put(Key.LISTINT_1, FieldData.simple(FieldType.LIST_INT, intlist));
+		intlist.add(97);
+		intlist.add(97);
+		map.put(Key.LISTINT_1, FieldData.listInt(intlist));
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {
@@ -150,6 +152,8 @@ public class TestMain {
 		bar.add(menu);
 		menu.add(UIColor.createMenuItem("Color"));
 		frame.setJMenuBar(bar);
+		
+		frame.setPreferredSize(new Dimension(640, 480));
 		
 		frame.pack();
 		frame.setVisible(true);

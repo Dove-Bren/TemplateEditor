@@ -27,29 +27,6 @@ public abstract class FieldData implements Cloneable {
 	 */
 	private List<String> description;
 	
-//	/**
-//	 * When in doubt, use the static helper constructors:
-//	 * <ul>
-//	 * <li>{@link #simple(FieldType, Object)}</li>
-//	 * <li>{@link #complex(Map, Map)}</li>
-//	 * <li>{@link #complexList(Map, List)}</li>
-//	 * <li>{@link #user(IUserData, Object)}</li>
-//	 * </ul>
-//	 * @param type
-//	 * @param userDataType
-//	 * @param nestedTypes
-//	 * @param value
-//	 */
-//	private <U> FieldData(FieldType type, IUserData<U> userDataType, Map<Integer, FieldData> nestedTypes,
-//			IEditorDisplayFormatter<Integer> formatter, Object value) {
-//		super();
-//		this.type = type;
-//		this.userDataType = userDataType;
-//		this.value = value;
-//		this.nestedTypes = nestedTypes;
-//		this.formatter = formatter;
-//	}
-//	
 	public static SimpleFieldData simple(FieldType type, Object value) {
 		return new SimpleFieldData(type, value);
 	}
@@ -68,6 +45,18 @@ public abstract class FieldData implements Cloneable {
 	
 	public static SimpleFieldData simple(String value) {
 		return new SimpleFieldData(FieldType.STRING, value);
+	}
+	
+	public static SimpleFieldData listInt(List<Integer> value) {
+		return new SimpleFieldData(FieldType.LIST_INT, value);
+	}
+	
+	public static SimpleFieldData listDouble(List<Double> value) {
+		return new SimpleFieldData(FieldType.LIST_DOUBLE, value);
+	}
+	
+	public static SimpleFieldData listString(List<String> value) {
+		return new SimpleFieldData(FieldType.LIST_STRING, value);
 	}
 	
 	public static ComplexFieldData complex(Map<Integer, FieldData> subfields,

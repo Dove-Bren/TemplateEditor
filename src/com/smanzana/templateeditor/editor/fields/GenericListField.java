@@ -37,6 +37,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	
 	private class ListItem extends JPanel implements MouseListener {
 		
+		private static final long serialVersionUID = -8288867064033323901L;
 		private Border border;
 		private boolean selected;
 		
@@ -115,9 +116,8 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		}
 
 		JComponent panel = new JScrollPane(dataList);
-		panel.setMinimumSize(new Dimension(20, 400));
-		panel.setMaximumSize(new Dimension(Short.MAX_VALUE, 400));
-		dataList.setMaximumSize(new Dimension(20, 400));
+		panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 150));
+		dataList.setMinimumSize(new Dimension(20, 200));
 		dataList.setMaximumSize(new Dimension(Short.MAX_VALUE, 400));
 		wrapper.add(panel);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
@@ -131,6 +131,15 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				add();
+			}
+		});
+		panel.add(button);
+		panel.add(Box.createRigidArea(new Dimension(0, 10)));
+		button = new JButton("Duplicate");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				duplicate();
 			}
 		});
 		panel.add(button);
@@ -186,6 +195,25 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		wrapper.validate();
 	}
 	
+	@SuppressWarnings("unchecked")
+	private void duplicate() {
+		List<ListItem> active = new LinkedList<>();
+		for (ListItem item : listMap.keySet()) {
+			if (item.selected)
+				active.add(item);
+		}
+		
+		if (!active.isEmpty()) {
+			for (ListItem c : active) {
+				add((T) fieldMap.get(listMap.get(c)).clone());
+			}
+			wrapper.validate();
+			wrapper.repaint();
+			
+			update();
+		}
+	}
+	
 	private void remove() {
 		List<ListItem> culls = new LinkedList<>();
 		for (ListItem item : listMap.keySet()) {
@@ -205,7 +233,6 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 			
 			update();
 		}
-		
 	}
 
 	@Override
@@ -231,12 +258,9 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	}
 	
 	protected void clearSelection() {
-		System.out.println("Clear selection");
 		for (ListItem item : listMap.keySet()) {
-			System.out.println("checking");
 			if (item.selected) {
 				item.deselect();
-				System.out.println("found");
 			}
 		}
 	}

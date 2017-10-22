@@ -130,6 +130,15 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		});
 		panel.add(button);
 		panel.add(Box.createRigidArea(new Dimension(0, 10)));
+		button = new JButton("Duplicate");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				duplicate();
+			}
+		});
+		panel.add(button);
+		panel.add(Box.createRigidArea(new Dimension(0, 10)));
 		button = new JButton("Delete");
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -246,11 +255,28 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	}
 	
 	private void add() {
-		DataWrapper val = cloneBase();
-		
-		
-		if (edit(val))
+		add(cloneBase(), true);
+	}
+	
+	private void add(DataWrapper val, boolean doEdit) {
+		if (!doEdit || edit(val))
 			data.addElement(val);
+	}
+	
+	private void duplicate() {
+		duplicate(dataList.getSelectedIndex());
+	}
+	
+	private void duplicate(int index) {
+		if (index == -1)
+			return;
+		
+		DataWrapper orig = data.getElementAt(index);
+		Map<Integer, FieldData> newmap = new HashMap<>();
+		for (Integer key : orig.data.keySet()) {
+			newmap.put(key, orig.data.get(key).clone());
+		}
+		add(new DataWrapper(newmap), false);
 	}
 	
 	private void remove() {
