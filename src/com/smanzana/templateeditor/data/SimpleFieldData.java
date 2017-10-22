@@ -1,11 +1,13 @@
 package com.smanzana.templateeditor.data;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.editor.fields.BoolField;
 import com.smanzana.templateeditor.editor.fields.DoubleField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
+import com.smanzana.templateeditor.editor.fields.GenericListField;
 import com.smanzana.templateeditor.editor.fields.IntField;
 import com.smanzana.templateeditor.editor.fields.TextField;
 
@@ -106,6 +108,7 @@ public final class SimpleFieldData extends FieldData {
 	@Override
 	public EditorField<?> constructField() {
 		EditorField<?> comp = null;
+		SimpleFieldData base = null;
 		switch (type) {
 		case BOOL:
 			comp = new BoolField("DELETE ME", (Boolean) value);
@@ -120,14 +123,47 @@ public final class SimpleFieldData extends FieldData {
 			comp = new TextField("DELETE ME", (String) value);
 			break;
 		case LIST_DOUBLE:
-			break;
+			base = new SimpleFieldData(FieldType.DOUBLE, 0.0);
+			// Intentional fallthrough
 		case LIST_INT:
-			break;
+			base = new SimpleFieldData(FieldType.INT, 0);
 		case LIST_STRING:
-			break;
+			base = new SimpleFieldData(FieldType.STRING, "");
+			
+			//Fallthrough for lists:
+			comp = new GenericListField<SimpleFieldData>("DELETE ME", base,
+					(List<SimpleFieldData>) toList());
 		}
 		
 		return comp;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private List<SimpleFieldData> toList() {
+		// Assumes value is list of primitive type
+		List<SimpleFieldData> list = new LinkedList<>();
+		
+		switch (type) {
+		case LIST_DOUBLE:
+			for (Double i : (List<Double>) value) {
+				list.add(FieldData.simple(i));
+			}
+			break;
+		case LIST_INT:
+			for (Integer i : (List<Integer>) value) {
+				list.add(FieldData.simple(i));
+			}
+			break;
+		case LIST_STRING:
+			for (String i : (List<String>) value) {
+				list.add(FieldData.simple(i));
+			}
+			break;
+		default:
+			break;
+		}
+		
+		return list;
 	}
 
 	@Override

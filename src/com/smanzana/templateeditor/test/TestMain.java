@@ -18,6 +18,7 @@ import javax.swing.WindowConstants;
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
+import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -33,6 +34,7 @@ public class TestMain {
 		INTVAL_2,
 		COMPLEX_1,
 		COMPLEX_2,
+		LISTINT_1,
 	}
 
 	public static void main(String[] args) {
@@ -93,6 +95,12 @@ public class TestMain {
 				return null;
 			}
 		}, complexList));
+		
+		List<Integer> intlist = new LinkedList<>();
+		intlist.add(99);
+		intlist.add(98);
+		intlist.add(97);
+		map.put(Key.LISTINT_1, FieldData.simple(FieldType.LIST_INT, intlist));
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {
