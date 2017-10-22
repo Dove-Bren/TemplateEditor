@@ -64,6 +64,7 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 		display.setEditable(false);
 		display.setText(NAME_MISSING);
 		display.setToolTipText(DESC_MISSING);
+		UIColor.setColors(display, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 		comp.add(display, BorderLayout.CENTER);
 		
 		JButton button = new JButton(EditorIconRegistry.get(EditorIconRegistry.Key.INSPECT));
@@ -81,6 +82,16 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				doMousePressed(e);
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				UIColor.setColors(display, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+				UIColor.setColors(display, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			}
 		});
 		

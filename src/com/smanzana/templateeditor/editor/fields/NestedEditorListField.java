@@ -115,7 +115,16 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.add(Box.createVerticalGlue());
 		panel.add(Box.createRigidArea(new Dimension(0, 10)));
-		JButton button = new JButton("New");
+		JButton button = new JButton("Edit");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				edit();
+			}
+		});
+		panel.add(button);
+		panel.add(Box.createRigidArea(new Dimension(0, 20)));
+		button = new JButton("New");
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -123,7 +132,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 			}
 		});
 		panel.add(button);
-		panel.add(Box.createRigidArea(new Dimension(0, 10)));
+		panel.add(Box.createRigidArea(new Dimension(0, 5)));
 		button = new JButton("Duplicate");
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -132,7 +141,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 			}
 		});
 		panel.add(button);
-		panel.add(Box.createRigidArea(new Dimension(0, 10)));
+		panel.add(Box.createRigidArea(new Dimension(0, 5)));
 		button = new JButton("Delete");
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -255,6 +264,13 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	private void add(DataWrapper val, boolean doEdit) {
 		if (!doEdit || edit(val))
 			data.addElement(val);
+	}
+	
+	private void edit() {
+		if (dataList.getSelectedIndex() == -1)
+			return;
+		
+		edit(data.getElementAt(dataList.getSelectedIndex()));
 	}
 	
 	private void duplicate() {
