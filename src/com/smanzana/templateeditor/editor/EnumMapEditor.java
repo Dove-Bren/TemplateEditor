@@ -1,13 +1,15 @@
 package com.smanzana.templateeditor.editor;
 
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
@@ -36,18 +38,22 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		super();
 		fields = new HashMap<>();
 		
-		editor = new JPanel();
-		editor.setLayout(new BoxLayout(editor, BoxLayout.PAGE_AXIS));
+		editor = new JPanel(new GridBagLayout());
+		//editor.setLayout(new BoxLayout(editor, BoxLayout.PAGE_AXIS));
 		//editor.setBackground(Color.YELLOW);
 		UIColor.setColors(editor, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
 		editor.setBorder(new EmptyBorder(20, 20, 20, 20));
 		
+		GridBagConstraints cons = new GridBagConstraints();
+		cons.fill = GridBagConstraints.HORIZONTAL;
+		cons.weighty = 0.0;
+		cons.anchor = GridBagConstraints.NORTH;
+		int consRow = 0;
 		EditorField<?> comp;
 		for (Entry<T,FieldData> row : enummap.entrySet()) {
 			String keyName = row.getValue().getName();
 			if (keyName == null)
 				TextUtil.pretty(row.getKey().name());
-			// TODO use keyName
 			
 			comp = row.getValue().constructField();
 			
@@ -59,12 +65,36 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			}
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			comp.getComponent().setMaximumSize(new Dimension(Short.MAX_VALUE, comp.getComponent().getPreferredSize().height));
-			editor.add(comp.getComponent());
 			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
 			comp.setOwner(owner);
+			
+			JLabel label = new JLabel(keyName);
+			label.setFont(label.getFont().deriveFont(Font.BOLD));
+			label.setHorizontalAlignment(JLabel.LEADING);
+			label.setMinimumSize(new Dimension(100, 10));
+			label.setOpaque(true);
+			label.setBorder(new EmptyBorder(0, 5, 0, 0));
+			UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
+		
+			cons.gridy = consRow++;
+			cons.gridx = 0;
+			cons.weightx = 0.0;
+			cons.fill = GridBagConstraints.BOTH;
+			editor.add(label, cons);
+			cons.gridx = 1;
+			cons.weightx = 1.0;
+			cons.fill = GridBagConstraints.HORIZONTAL;
+			editor.add(comp.getComponent(), cons);
 		}
 		
-		editor.add(Box.createVerticalGlue());
+		cons.gridx = 0;
+		cons.gridy = consRow;
+		cons.weighty = 1.0;
+		cons.gridwidth = 2;
+		cons.fill = GridBagConstraints.BOTH;
+		JPanel spacer = new JPanel();
+		UIColor.setColors(spacer, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
+		editor.add(spacer, cons);
 		this.setViewportView(editor);
 		this.validate();
 	}

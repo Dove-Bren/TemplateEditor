@@ -56,9 +56,9 @@ public class TestMain {
 		map.put(Key.INTVAL_2, FieldData.simple(1).name("Int2").desc("line1").desc("line2"));
 		
 		Map<Integer, FieldData> nested1 = new HashMap<>();
-		nested1.put(1, FieldData.simple(true));
-		nested1.put(2, FieldData.simple("NestedDefault1"));
-		nested1.put(3, FieldData.simple("Default Name"));
+		nested1.put(1, FieldData.simple(true).name("Survives to end"));
+		nested1.put(2, FieldData.simple("NestedDefault1").name("Description"));
+		nested1.put(3, FieldData.simple("Default Name").name("Name"));
 		map.put(Key.COMPLEX_1, FieldData.complex(nested1, new IEditorDisplayFormatter<Integer>() {
 			@Override
 			public String getEditorName(Map<Integer, FieldData> dataMap) {
@@ -66,7 +66,7 @@ public class TestMain {
 			}
 			@Override
 			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
-				return "Description not supported";
+				return (String) ((SimpleFieldData) dataMap.get(2)).getValue();
 			}
 		}));
 		
