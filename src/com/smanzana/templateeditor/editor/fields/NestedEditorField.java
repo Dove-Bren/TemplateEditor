@@ -3,6 +3,7 @@ package com.smanzana.templateeditor.editor.fields;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -52,7 +53,6 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 //	public static <T> NestedEditorField<T> create(String title, Map<T, FieldData<T>> fieldMap, IEditorDisplayFormatter<T> formatter) {
 //		return new NestedEditorField<T>(title, fieldMap, formatter);
 //	}
-	
 	public NestedEditorField(String title, Map<Integer, FieldData> fieldMap, IEditorDisplayFormatter<Integer> formatter) {
 		this.dataMap = fieldMap; // Don't actually use it till we create nested editor
 		this.formatter = formatter;
@@ -80,6 +80,7 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 				edit();
 			}
 		});
+		button.setMargin(new Insets(0,0,0,0));
 		comp.add(button, BorderLayout.EAST);
 		
 		
