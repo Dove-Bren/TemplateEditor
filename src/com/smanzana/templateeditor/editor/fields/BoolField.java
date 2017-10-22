@@ -26,16 +26,18 @@ public class BoolField extends AEditorField<Boolean> implements ActionListener {
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
+		//wrapper.add(Box.createHorizontalGlue());
 		JLabel label = new JLabel(title);
 		label.setFont(label.getFont().deriveFont(Font.BOLD));
 		wrapper.add(label);
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
+		wrapper.add(Box.createHorizontalGlue());
 		
 		falsefield = new JRadioButton("False");
 		falsefield.addActionListener(this);
 		wrapper.add(falsefield);
 		wrapper.add(Box.createRigidArea(new Dimension(30, 0)));
+		
 		
 		truefield = new JRadioButton("True");
 		truefield.addActionListener(this);
