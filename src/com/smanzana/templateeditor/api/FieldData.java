@@ -66,6 +66,14 @@ public abstract class FieldData implements Cloneable {
 		return new ComplexFieldData(subfields, formatter);
 	}
 	
+	public static <T> ComplexFieldData complexObject(ObjectDataLoader<T> loader) {
+		return new ComplexFieldData(loader);
+	}
+	
+	public static <T> ComplexFieldData complexObject(T object) {
+		return complexObject(new ObjectDataLoader<T>(object));
+	}
+	
 	public static ComplexFieldData complexList(Map<Integer, FieldData> subfields,
 			IEditorDisplayFormatter<Integer> formatter) {
 		return complexList(subfields, formatter, new LinkedList<Map<Integer, FieldData>>());

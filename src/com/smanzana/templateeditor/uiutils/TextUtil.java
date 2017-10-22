@@ -8,6 +8,7 @@ public class TextUtil {
 	 */
 	public static String pretty(String raw) {
 		String buf = "";
+		raw = raw.toUpperCase();
 			
 		buf += raw.substring(0, 1);
 		raw = raw.substring(1);

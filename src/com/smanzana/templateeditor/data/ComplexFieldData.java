@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.api.ObjectDataLoader;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.NestedEditorField;
 import com.smanzana.templateeditor.editor.fields.NestedEditorListField;
@@ -25,6 +26,10 @@ public final class ComplexFieldData extends FieldData {
 	
 	private List<Map<Integer, FieldData>> listValue;
 	private boolean isList;
+	
+	public ComplexFieldData(ObjectDataLoader<?> loader) {
+		this(loader.getFieldMap(), loader.getFormatter(), loader.getListData());
+	}
 	
 	public ComplexFieldData(Map<Integer, FieldData> submap, IEditorDisplayFormatter<Integer> formatter) {
 		this(submap, formatter, null);

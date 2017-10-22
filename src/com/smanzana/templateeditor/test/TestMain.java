@@ -19,6 +19,7 @@ import javax.swing.WindowConstants;
 import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
+import com.smanzana.templateeditor.api.ObjectDataLoader;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.editor.fields.GrabListField;
@@ -37,6 +38,7 @@ public class TestMain {
 		COMPLEX_2,
 		LISTINT_1,
 		SUBSET_1,
+		AUTO_1,
 	}
 
 	public static void main(String[] args) {
@@ -138,6 +140,16 @@ public class TestMain {
 				return null;
 			}
 		}).name("Element Affinities").desc("What elements does this creature thrive in"));
+		
+		ObjectDataLoader<TestObject> loader = new ObjectDataLoader<>(new TestSubObject("Name1", "No Description", 5, false, 66));
+		
+		if (!loader.isValid())
+			System.exit(1);
+		
+		map.put(Key.AUTO_1, FieldData.complexObject(loader).name("Auto Value"));
+		
+		
+		///////////////////////////////////////
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {
