@@ -90,11 +90,13 @@ public abstract class FieldData implements Cloneable {
 	}
 	
 	public FieldData description(String description) {
+		if (description == null)
+			return this;
+		
 		if (this.description == null)
 			this.description = new LinkedList<>();
 		
-		if (description != null)
-			this.description.add(description);
+		this.description.add(description);
 		return this;
 	}
 	

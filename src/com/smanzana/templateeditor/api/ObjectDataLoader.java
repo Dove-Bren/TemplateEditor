@@ -129,7 +129,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			int key = wrapper.key;
-			FieldData data = wrapField(f, val, wrapper.name == null ? TextUtil.pretty(f.getName()) : wrapper.name);
+			FieldData data = wrapField(f, val, pullName(wrapper), pullDesc(wrapper));
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -162,8 +162,8 @@ public class ObjectDataLoader<T> {
 			DataLoaderList aList = f.getAnnotation(DataLoaderList.class);
 			DataLoaderName aName = f.getAnnotation(DataLoaderName.class);
 			DataLoaderDescription aDesc = f.getAnnotation(DataLoaderDescription.class);
-			if (!f.isAnnotationPresent(DataLoaderData.class)
-					&& aList == null && aName == null && aDesc == null)
+			DataLoaderData aData = f.getAnnotation(DataLoaderData.class);
+			if (aData == null && aList == null && aName == null && aDesc == null)
 				continue;
 			
 			if (removedNames.contains(f.getName()))
@@ -214,6 +214,12 @@ public class ObjectDataLoader<T> {
 			int key = nextKey();
 			
 			// extract name and desc from DataLoaderData
+			if (aData != null) {
+				if (aData.name() != null && !aData.name().trim().isEmpty())
+					name = aData.name();
+				if (aData.description() != null && !aData.description().trim().isEmpty())
+					desc = aData.description();
+			}
 			
 			if (aName != null) // If this field is the display name
 			if (nameKey == -1) // no other display name has been set
@@ -262,9 +268,7 @@ public class ObjectDataLoader<T> {
 				Field field = row.getValue().field;
 				try {
 					rowMap.put(row.getKey(), wrapField(field, field.get(item),
-							row.getValue().name == null
-								? TextUtil.pretty(field.getName())
-								: row.getValue().name));
+							pullName(row.getValue()), pullDesc(row.getValue())));
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
 					System.out.println("Failed parsing field " + field.getName() + " on child object type " + templateObject.getClass()
@@ -284,17 +288,25 @@ public class ObjectDataLoader<T> {
 		}
 	}
 	
+	private String pullName(FieldWrapper wrapper) {
+		return wrapper.name == null ? TextUtil.pretty(wrapper.field.getName()) : wrapper.name; 
+	}
+	
+	private String pullDesc(FieldWrapper wrapper) {
+		return wrapper.desc; 
+	}
+	
 	@SuppressWarnings("unchecked")
-	private <U> FieldData wrapField(Field f, Object value, String name) {
+	private <U> FieldData wrapField(Field f, Object value, String name, String description) {
 		Class<?> clazz = f.getType();
 		if (clazz.isPrimitive()) {
 			
 			if (clazz.equals(Integer.class) || clazz.equals(int.class))
-				return FieldData.simple((Integer) value).name(name);
+				return FieldData.simple((Integer) value).name(name).desc(description);
 			if (clazz.equals(Double.class) || clazz.equals(double.class))
-				return FieldData.simple((Double) value).name(name);
+				return FieldData.simple((Double) value).name(name).desc(description);
 			if (clazz.equals(Boolean.class) || clazz.equals(boolean.class))
-				return FieldData.simple((Boolean) value).name(name);
+				return FieldData.simple((Boolean) value).name(name).desc(description);
 			System.err.println("Unsupported primitive type: " + clazz);
 			return null;
 		}
@@ -307,11 +319,11 @@ public class ObjectDataLoader<T> {
 			System.out.println("Debug: Got generic type " + subclazz + " for list: " + clazz);
 			
 			if (subclazz.equals(String.class))
-				return FieldData.listString((List<String>) value).name(name);
+				return FieldData.listString((List<String>) value).name(name).desc(description);
 			if (subclazz.equals(Integer.class))
-				return FieldData.listInt((List<Integer>) value).name(name);
+				return FieldData.listInt((List<Integer>) value).name(name).desc(description);
 			if (subclazz.equals(Double.class))
-				return FieldData.listDouble((List<Double>) value).name(name);
+				return FieldData.listDouble((List<Double>) value).name(name).desc(description);
 			
 			System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
 			if (subclazz.isPrimitive()) {
@@ -332,9 +344,9 @@ public class ObjectDataLoader<T> {
 		// Nothing else; assume nested complex class
 		ObjectDataLoader<?> loader = new ObjectDataLoader<>(value);
 		if (loader.getListData() != null) {
-			return FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData()).name(name);
+			return FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData()).name(name).desc(description);
 		} else
-			return FieldData.complex(loader.getFieldMap(), loader.getFormatter()).name(name);
+			return FieldData.complex(loader.getFieldMap(), loader.getFormatter()).name(name).desc(description);
 	}
 	
 	public Map<Integer, FieldData> getFieldMap() {

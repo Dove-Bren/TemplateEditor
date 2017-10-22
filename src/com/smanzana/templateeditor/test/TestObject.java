@@ -18,6 +18,7 @@ public class TestObject {
 	@DataLoaderName
 	private String name;
 	
+	@DataLoaderData(name="SecretValue",description="A super secret value")
 	public boolean enabled;
 	
 	public List<String> strlist;
