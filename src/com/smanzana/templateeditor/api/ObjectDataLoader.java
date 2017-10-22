@@ -27,10 +27,16 @@ public class ObjectDataLoader<T> {
 	private static class FieldWrapper {
 		public Field field;
 		public Object template;
+		public String name;
+		public String desc;
+		public int key;
 		
-		public FieldWrapper(Field field, Object template) {
+		public FieldWrapper(Field field, int key, Object template, String name, String desc) {
 			this.field = field;
 			this.template = template;
+			this.name = name;
+			this.desc = desc;
+			this.key = key;
 		}
 	}
 
@@ -39,7 +45,7 @@ public class ObjectDataLoader<T> {
 	private int formattingNameIndex; // What index (in template) to use for the name. Not optional.
 	private int formattingDescIndex; // what index (in template) to us for description. -1 means none.
 	private Map<Integer, FieldData> template;
-	private Map<Integer, Field> fieldMap;
+	private Map<Integer, FieldWrapper> fieldMap;
 	private List<Map<Integer, FieldData>> listTemplates;
 	private boolean valid;
 	private int keyIndex;
@@ -47,6 +53,8 @@ public class ObjectDataLoader<T> {
 	private ObjectDataLoader() {
 		valid = false;
 		keyIndex = 0;
+		formattingNameIndex = -1;
+		formattingDescIndex = -1;
 		template = new HashMap<>();
 		fieldMap = new HashMap<>();
 		// TODO
@@ -74,6 +82,9 @@ public class ObjectDataLoader<T> {
 		if (!valid)
 			return;
 		
+		if (formattingNameIndex == -1)
+			formattingNameIndex = 0;
+		
 		extractListMaps();
 	}
 	
@@ -96,7 +107,7 @@ public class ObjectDataLoader<T> {
 		// For now let's just go over everything
 		// TODO annotations
 		List<FieldWrapper> fields = new LinkedList<>();
-		collectFields(fields, templateObject.getClass());
+		collectFields(fields, templateObject.getClass(), templateObject);
 		for (FieldWrapper wrapper : fields) {
 			Field f = wrapper.field;
 			f.setAccessible(true);
@@ -117,8 +128,8 @@ public class ObjectDataLoader<T> {
 				return;
 			}
 			
-			int key = nextKey();
-			FieldData data = wrapField(f, val, TextUtil.pretty(f.getName()));
+			int key = wrapper.key;
+			FieldData data = wrapField(f, val, wrapper.name == null ? TextUtil.pretty(f.getName()) : wrapper.name);
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -127,26 +138,108 @@ public class ObjectDataLoader<T> {
 			}
 			
 			template.put(key, data);
-			fieldMap.put(key, f);
+			fieldMap.put(key, wrapper);
 		}
 		
 		valid = true; // Didn't error, must be valid
 	}
 	
-	private void collectFields(List<FieldWrapper> list, Class<?> clazz) {
+	private void collectFields(List<FieldWrapper> list, Class<?> clazz, Object o) {
 		
 		if (clazz == Object.class
 				|| clazz.isPrimitive())
 			return;
 		
+		Map<String, FieldWrapper> buffer = new HashMap<>();
+		List<String> removedNames = new LinkedList<>();
+		int nameKey = -1;
+		int descKey = -1;
+		
 		for (Field f : clazz.getDeclaredFields()) {
 			if (Modifier.isStatic(f.getModifiers()))
 				continue;
 			
-			list.add(new FieldWrapper(f, null)); // TODO pass in template object if exists
+			DataLoaderList aList = f.getAnnotation(DataLoaderList.class);
+			DataLoaderName aName = f.getAnnotation(DataLoaderName.class);
+			DataLoaderDescription aDesc = f.getAnnotation(DataLoaderDescription.class);
+			if (!f.isAnnotationPresent(DataLoaderData.class)
+					&& aList == null && aName == null && aDesc == null)
+				continue;
+			
+			if (removedNames.contains(f.getName()))
+				continue;
+			
+			Object template = null;
+			String name = null;
+			String desc = null;
+			if (aList != null && aList.templateName() != null) {
+				// Search for field by this name in current class
+				// Also add it to list of ignored fields
+				// Also remove from buffer if already added
+				Field reference;
+				try {
+					reference = clazz.getDeclaredField(aList.templateName());
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.err.println("Could not grab referenced field " + aList.templateName()
+							+ " for field " + f.getName());
+					reference = null;
+				}
+				
+				if (reference == null) {
+					System.err.println("Field lookup failed for field " + f.getName());
+					continue;
+				}
+				
+				try {
+				template = reference.get(o);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.err.println("Failed field fetch for referenced field " + reference.getName());
+					continue;
+				}
+				
+				// Properly found a reference. Remove an add it where appropriate
+				FieldWrapper booted = buffer.remove(reference.getName());
+				if (booted != null) {
+					// if it is namekey or desckey, remove those
+					if (booted.key == nameKey)
+						nameKey = -1;
+					if (booted.key == descKey)
+						descKey = -1;
+				}
+				removedNames.add(reference.getName());
+			}
+			
+			int key = nextKey();
+			
+			// extract name and desc from DataLoaderData
+			
+			if (aName != null) // If this field is the display name
+			if (nameKey == -1) // no other display name has been set
+				nameKey = key;
+			
+			if (aDesc != null)
+			if (descKey == -1)
+				descKey = key;
+			
+			buffer.put(f.getName(), new FieldWrapper(f, key, template, name, desc)); // TODO pass in template object if exists
+			
 		}
 		
-		collectFields(list, clazz.getSuperclass());
+		list.addAll(buffer.values());
+		
+		// DISCONNECT
+		// no way to know if values ended up in or were ignored
+		
+		// If nameField or DescField made it in (not ignored), set index appropriately
+		if (nameKey != -1 && formattingNameIndex == -1)
+			formattingNameIndex = nameKey;
+		
+		if (descKey != -1 && formattingDescIndex == -1)
+			formattingDescIndex = descKey;
+		
+		collectFields(list, clazz.getSuperclass(), o);
 		
 	}
 	
@@ -164,20 +257,23 @@ public class ObjectDataLoader<T> {
 			// For each item, create a copy of template by pulling out fields
 			
 			Map<Integer, FieldData> rowMap = new HashMap<>();
-			for (Entry<Integer, Field> row : fieldMap.entrySet()) {
+			for (Entry<Integer, FieldWrapper> row : fieldMap.entrySet()) {
 				// Type-safe cause of generics; we know these fields exist in list objects
+				Field field = row.getValue().field;
 				try {
-					rowMap.put(row.getKey(), wrapField(row.getValue(), row.getValue().get(item),
-							TextUtil.pretty(row.getValue().getName())));
+					rowMap.put(row.getKey(), wrapField(field, field.get(item),
+							row.getValue().name == null
+								? TextUtil.pretty(field.getName())
+								: row.getValue().name));
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
-					System.out.println("Failed parsing field " + row.getValue().getName() + " on child object type " + templateObject.getClass()
+					System.out.println("Failed parsing field " + field.getName() + " on child object type " + templateObject.getClass()
 					+ ": " + e.getMessage());
 					valid = false;
 					return;
 				} catch (IllegalAccessException e) {
 					e.printStackTrace();
-					System.out.println("Failed parsing field " + row.getValue().getName() + " on child object type " + templateObject.getClass()
+					System.out.println("Failed parsing field " + field.getName() + " on child object type " + templateObject.getClass()
 					+ ": " + e.getMessage());
 					valid = false;
 					return;
@@ -262,6 +358,9 @@ public class ObjectDataLoader<T> {
 				}
 				
 				// This means we messed up and have a non-simple field for a name
+				if (data == null)
+					return "";
+				
 				return data.toString();
 			}
 			@Override
@@ -276,6 +375,9 @@ public class ObjectDataLoader<T> {
 				}
 				
 				// This means we messed up and have a non-simple description
+				if (data == null)
+					return "";
+				
 				return data.toString(); // Will look ugly and prompt investigation
 			}
 		};

@@ -3,13 +3,20 @@ package com.smanzana.templateeditor.test;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TestObject {
+import com.smanzana.templateeditor.api.DataLoaderData;
+import com.smanzana.templateeditor.api.DataLoaderDescription;
+import com.smanzana.templateeditor.api.DataLoaderName;
 
-	private String name;
+public class TestObject {
 	
+	@DataLoaderDescription
 	public String description;
 	
+	@DataLoaderData
 	public int value;
+
+	@DataLoaderName
+	private String name;
 	
 	public boolean enabled;
 	
