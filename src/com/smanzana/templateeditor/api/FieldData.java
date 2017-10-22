@@ -112,6 +112,18 @@ public abstract class FieldData implements Cloneable {
 		return description;
 	}
 	
+	public String getFormattedDescription() {
+		if (description == null || description.isEmpty())
+			return null;
+		
+		String buf = "<html>" + description.get(0);
+		for (int i = 1; i < description.size(); i++) {
+			buf += "<br />" + description.get(i);
+		}
+		
+		return buf;
+	}
+	
 	@Override
 	public abstract FieldData clone();
 	

@@ -47,13 +47,7 @@ public class TemplateEditor<T> extends JScrollPane implements IEditor<T> {
 				continue;
 			
 			if (row.getValue().getDescription() != null) {
-				String buf = "";
-				for (String line : row.getValue().getDescription()) {
-					if (!buf.isEmpty())
-						buf += System.getProperty("line.separator");
-					buf += line;
-				}
-				comp.getComponent().setToolTipText(buf);
+				comp.getComponent().setToolTipText(row.getValue().getFormattedDescription());
 			}
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			comp.getComponent().setPreferredSize(new Dimension(100, 25));

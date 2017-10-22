@@ -53,7 +53,7 @@ public class TestMain {
 		map.put(Key.INTVAL_1, FieldData.simple(-1).name("Int1"));
 		map.put(Key.STRVAL_3, FieldData.simple("Default3").name("Str3"));
 		map.put(Key.DOUBLEVAL_1, FieldData.simple(-1.0).name("Double1"));
-		map.put(Key.INTVAL_2, FieldData.simple(1).name("Int2"));
+		map.put(Key.INTVAL_2, FieldData.simple(1).name("Int2").desc("line1").desc("line2"));
 		
 		Map<Integer, FieldData> nested1 = new HashMap<>();
 		nested1.put(1, FieldData.simple(true));
