@@ -7,7 +7,9 @@ import java.util.Map;
 import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
+import com.smanzana.templateeditor.data.SubsetFieldData;
 import com.smanzana.templateeditor.editor.fields.EditorField;
+import com.smanzana.templateeditor.editor.fields.GrabListField;
 
 /**
  * Bundle of data for a field
@@ -72,6 +74,11 @@ public abstract class FieldData implements Cloneable {
 	public static ComplexFieldData complexList(Map<Integer, FieldData> subfields,
 			IEditorDisplayFormatter<Integer> formatter, List<Map<Integer, FieldData>> startValue) {
 		return new ComplexFieldData(subfields, formatter, startValue);
+	}
+	
+	public static <T> SubsetFieldData<T> subset(List<T> options, List<T> selected,
+			GrabListField.DisplayFormatter<T> formatter) {
+		return new SubsetFieldData<T>(options, formatter, selected);
 	}
 	
 	public FieldData description(String description) {

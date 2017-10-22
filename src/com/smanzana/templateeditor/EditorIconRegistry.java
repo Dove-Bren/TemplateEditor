@@ -11,7 +11,8 @@ public final class EditorIconRegistry {
 	public static enum Key {
 		ARROW_RIGHT("arrow_right.png", "right arrow"),
 		ARROW_DOWN("arrow_down.png", "down arrow"),
-		INSPECT("inspect.png", "inspect");
+		INSPECT("inspect.png", "inspect"),
+		GRIP("grip.png", "grip");
 		
 		private String defaultPath;
 		private String shortDesc;

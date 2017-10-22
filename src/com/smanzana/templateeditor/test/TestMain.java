@@ -21,6 +21,7 @@ import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
+import com.smanzana.templateeditor.editor.fields.GrabListField;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
 public class TestMain {
@@ -35,6 +36,7 @@ public class TestMain {
 		COMPLEX_1,
 		COMPLEX_2,
 		LISTINT_1,
+		SUBSET_1,
 	}
 
 	public static void main(String[] args) {
@@ -105,6 +107,37 @@ public class TestMain {
 		intlist.add(97);
 		intlist.add(97);
 		map.put(Key.LISTINT_1, FieldData.listInt(intlist).name("Owned Numbers"));
+		
+		List<String> stringSet = new LinkedList<>();
+		List<String> subset = new LinkedList<>();
+		String str;
+		
+		str = "Fire";
+		stringSet.add(str);
+		subset.add(str);
+		str = "Water";
+		stringSet.add(str);
+		subset.add(str);
+		str = "Earth";
+		stringSet.add(str);
+		str = "Wind";
+		stringSet.add(str);
+		subset.add(str);
+		str = "Light";
+		stringSet.add(str);
+		str = "Dark";
+		stringSet.add(str);
+		map.put(Key.SUBSET_1, FieldData.subset(stringSet, subset, new GrabListField.DisplayFormatter<String>() {
+			@Override
+			public String getListDataName(String data) {
+				return data;
+			}
+
+			@Override
+			public String getListDataDesc(String data) {
+				return null;
+			}
+		}).name("Element Affinities").desc("What elements does this creature thrive in"));
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {

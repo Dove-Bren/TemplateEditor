@@ -1,7 +1,6 @@
 package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -39,7 +38,7 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * You select elements from there and add them to the working list.
  * @author Skyler
  */
-public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEditorField<List<T>> implements ActionListener {
+public class GrabListField<T> extends AEditorField<List<T>> implements ActionListener {
 	private static class GrabListData implements Serializable {
 		private static final long serialVersionUID = 1051923L;
 		private static String PREFIX = "_GrabFieldData";
@@ -88,6 +87,11 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 		}
 	}
 	
+	public static interface DisplayFormatter<T> {
+		public String getListDataName(T data);
+		public String getListDataDesc(T data);
+	}
+	
 	private static DataFlavor GRABLIST_FLAVOR = null;
 	private static boolean DD_ENABLED = true;
 	
@@ -97,21 +101,22 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 	private JList<T> toList;
 	private JPanel wrapper;
 	private UUID uuid;
+	//private DisplayFormatter<T> formatter;
 	
-	public GrabListField(String title, List<T> options) {
-		this(title, options, null);
+	public GrabListField(List<T> options, DisplayFormatter<T> formatter) {
+		this(options, formatter, null);
 	}
 	
 	/**
 	 * Initializes including selected all elements from <i>alreadySelected</i>.
 	 * Uses {@link IEditorDisplayFormatter#getEditorName} as key value for equals lookups
 	 * and uniqueness-check
-	 * @param title
 	 * @param options
 	 * @param alreadySelected
 	 */
-	public GrabListField(String title, List<T> options, List<T> alreadySelected) {
+	public GrabListField(List<T> options, DisplayFormatter<T> formatter, List<T> alreadySelected) {
 		this.uuid = UUID.randomUUID();
+		//this.formatter = formatter;
 		
 		if (GrabListField.DD_ENABLED && GrabListField.GRABLIST_FLAVOR == null) {
 			try {
@@ -121,18 +126,12 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 				System.out.println("Failed lookup of grablist data class. Drag&Drop between grablists is disabled");
 				GrabListField.DD_ENABLED = false;
 			}
-			System.err.println("Lookup on: " + GrabListData.class.getName());
 		}
 		
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
 		UIColor.setColors(wrapper, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		from = new DefaultListModel<>();
 		fromList = new JList<T>(from);
@@ -144,7 +143,10 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 		fromList.setCellRenderer((list, e, index, isSelected, focus) -> {
 			JLabel comp;
 			
-			comp = new JLabel("  " + e.getEditorName());
+			comp = new JLabel("  " + formatter.getListDataName(e));
+			String desc = formatter.getListDataDesc(e);
+			if (desc != null && !desc.trim().isEmpty())
+				comp.setToolTipText(desc);
 			comp.setOpaque(true);
 
 	        // check if this cell represents the current DnD drop location
@@ -293,7 +295,10 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 		toList.setCellRenderer((list, e, index, isSelected, focus) -> {
 			JLabel comp;
 			
-			comp = new JLabel("  " + e.getEditorName());
+			comp = new JLabel("  " + formatter.getListDataName(e));
+			String desc = formatter.getListDataDesc(e);
+			if (desc != null && !desc.trim().isEmpty())
+				comp.setToolTipText(desc);
 			comp.setOpaque(true);
 
 	        // check if this cell represents the current DnD drop location
@@ -482,9 +487,7 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 		UIColor.setColor(pane, UIColor.Key.BASE_SYSTEM);
 		wrapper.add(pane);
 		
-		wrapper.add(Box.createRigidArea(new Dimension(label.getPreferredSize().width, 0)));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
 		
 		wrapper.validate();
 	}
@@ -557,7 +560,7 @@ public class GrabListField<K, T extends IEditorDisplayFormatter<K>> extends AEdi
 		while (it.hasMoreElements()) {
 			from.addElement(it.nextElement());
 		}
-		from.removeAllElements();
+		to.removeAllElements();
 		
 		// 2) Add elements from 'obj' and remove from 'from' list
 		for (T t : obj) {
