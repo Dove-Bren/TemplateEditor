@@ -113,16 +113,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		}
 
 		dataList.setVisibleRowCount(10);
-		dataList.setMaximumSize(dataList.getPreferredScrollableViewportSize());
-		
-		Dimension med;
-		med = new Dimension(dataList.getPreferredScrollableViewportSize().width, dataList.getPreferredScrollableViewportSize().height + 30);
-		
-		Dimension small = new Dimension(med.width - 30, med.height - 30);
-		dataList.setPreferredSize(small);
 		JComponent panel = new JScrollPane(dataList);
-		panel.setPreferredSize(med);
-		panel.setMinimumSize(panel.getMaximumSize());
 		wrapper.add(panel);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		

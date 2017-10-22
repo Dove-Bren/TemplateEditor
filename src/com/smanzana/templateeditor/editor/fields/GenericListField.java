@@ -1,23 +1,28 @@
 package com.smanzana.templateeditor.editor.fields;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Enumeration;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
+import javax.swing.border.Border;
 
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -29,15 +34,67 @@ import com.smanzana.templateeditor.uiutils.UIColor;
  * @author Skyler
  */
 public class GenericListField<T extends FieldData> extends AEditorField<List<T>> {
+	
+	private class ListItem extends JPanel implements MouseListener {
+		
+		private Border border;
+		private boolean selected;
+		
+		public ListItem(LayoutManager manager) {
+			super(manager);
+			this.addMouseListener(this);
+			border = BorderFactory.createLineBorder(Color.BLACK);
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent arg0) {
+			if (!arg0.isControlDown())
+				clearSelection();
+			
+			select();
+		}
+		
+		protected void deselect() {
+			selected = false;
+			this.setBorder(null);
+		}
+		
+		protected void select() {
+			selected = true;
+			this.setBorder(border);
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent arg0) {
+			;
+		}
+
+		@Override
+		public void mouseExited(MouseEvent arg0) {
+			;
+		}
+
+		@Override
+		public void mousePressed(MouseEvent arg0) {
+			;
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent arg0) {
+			;
+		}
+	}
 		
 	private T base; // used to create new subfields
-	private DefaultListModel<T> data;
-	private JList<T> dataList;
 	private JPanel wrapper;
-
+	private JPanel dataList; // components are STRICTLY ListItem
+	private Map<EditorField<?>, T> fieldMap; // So we don't keep making them
+	private Map<ListItem, EditorField<?>> listMap;
 	
 	public GenericListField(String title, T baseEditor, List<T> fields) {
 		this.base = baseEditor;
+		fieldMap = new HashMap<>();
+		listMap = new HashMap<>();
 		
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
@@ -49,31 +106,19 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		wrapper.add(label);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
-		data = new DefaultListModel<>();
-		dataList = new JList<T>(data);
-		dataList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		dataList.setLayoutOrientation(JList.VERTICAL);
+		dataList = new JPanel();
+		dataList.setLayout(new BoxLayout(dataList, BoxLayout.PAGE_AXIS));
 		UIColor.setColors(dataList, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
-		
-		dataList.setCellRenderer((list, e, index, isSelected, focus) -> {
-			return e.constructField().getComponent();
-		});
 				
 		for (T item : fields) {
-			data.addElement(item);
+			add(item);
 		}
 
-		dataList.setVisibleRowCount(10);
-		dataList.setMaximumSize(dataList.getPreferredScrollableViewportSize());
-		
-		Dimension med;
-		med = new Dimension(dataList.getPreferredScrollableViewportSize().width, dataList.getPreferredScrollableViewportSize().height + 30);
-		
-		Dimension small = new Dimension(med.width - 30, med.height - 30);
-		dataList.setPreferredSize(small);
 		JComponent panel = new JScrollPane(dataList);
-		panel.setPreferredSize(med);
-		panel.setMinimumSize(panel.getMaximumSize());
+		panel.setMinimumSize(new Dimension(20, 400));
+		panel.setMaximumSize(new Dimension(Short.MAX_VALUE, 400));
+		dataList.setMaximumSize(new Dimension(20, 400));
+		dataList.setMaximumSize(new Dimension(Short.MAX_VALUE, 400));
 		wrapper.add(panel);
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
@@ -124,37 +169,75 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	}
 	
 	private void add() {
-		T val = cloneBase();
-
-		data.addElement(val);
+		add(cloneBase());
+	}
+	
+	private void add(T val) {
+		EditorField<?> field = val.constructField();
+		ListItem item = new ListItem(new BorderLayout());
+		item.add(field.getComponent(), BorderLayout.CENTER);
+		Dimension pref = item.getPreferredSize();
+		item.setMaximumSize(new Dimension(Short.MAX_VALUE, pref.height));
+		item.setMinimumSize(new Dimension(20, pref.height));
+		fieldMap.put(field, val);
+		listMap.put(item, field);
+		dataList.add(item);
+		
+		wrapper.validate();
 	}
 	
 	private void remove() {
-		remove(dataList.getSelectedIndex());
-	}
-	
-	private void remove(int index) {
-		if (index == -1)
-			return;
+		List<ListItem> culls = new LinkedList<>();
+		for (ListItem item : listMap.keySet()) {
+			if (item.selected)
+				culls.add(item);
+		}
 		
-		data.remove(index);
-		update();
+		if (!culls.isEmpty()) {
+			for (ListItem c : culls) {
+				dataList.remove(c);
+				EditorField<?> field = listMap.get(c);
+				fieldMap.remove(field);
+				listMap.remove(c);
+			}
+			wrapper.validate();
+			wrapper.repaint();
+			
+			update();
+		}
+		
 	}
 
 	@Override
 	public List<T> getObject() {
 		List<T> list = new LinkedList<>();
-		Enumeration<T> it = data.elements();
-		while (it.hasMoreElements())
-			list.add(it.nextElement());
+		
+		for (EditorField<?> field : fieldMap.keySet()) {
+			T val = fieldMap.get(field);
+			val.fillFromField(field);
+			list.add(val);
+		}
 		return list;
 	}
 
 	@Override
 	protected void setCurrentObject(List<T> obj) {
-		data.clear();
+		dataList.removeAll();
+		fieldMap.clear();
+		listMap.clear();
 		for (T o : obj) {
-			data.addElement(o);
+			add(o);
+		}
+	}
+	
+	protected void clearSelection() {
+		System.out.println("Clear selection");
+		for (ListItem item : listMap.keySet()) {
+			System.out.println("checking");
+			if (item.selected) {
+				item.deselect();
+				System.out.println("found");
+			}
 		}
 	}
 	
