@@ -84,4 +84,18 @@ public final class ComplexFieldData extends FieldData {
 			nestedTypes = (Map<Integer, FieldData>) field.getObject();
 		}
 	}
+	
+	public Map<Integer, FieldData> getSingleData() {
+		if (isList)
+			return null;
+		
+		return nestedTypes;
+	}
+	
+	public List<Map<Integer, FieldData>> getListData() {
+		if (!isList)
+			return null;
+		
+		return listValue;
+	}
 }
