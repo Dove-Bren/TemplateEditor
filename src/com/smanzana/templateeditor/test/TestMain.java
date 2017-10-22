@@ -68,19 +68,19 @@ public class TestMain {
 			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
 				return (String) ((SimpleFieldData) dataMap.get(2)).getValue();
 			}
-		}));
+		}).name("Super Power"));
 		
 		Map<Integer, FieldData> nested2 = new HashMap<>();
-		nested2.put(1, FieldData.simple("Default Name"));
-		nested2.put(2, FieldData.simple(false));
-		nested2.put(3, FieldData.simple("NestedDefault1"));
+		nested2.put(1, FieldData.simple("Default Name").name("Name"));
+		nested2.put(2, FieldData.simple(false).name("Important"));
+		nested2.put(3, FieldData.simple("NestedDefault1").name("Description"));
 		List<Map<Integer, FieldData>> complexList = new LinkedList<>();
 		
 		Map<Integer, FieldData> nestedobj = new HashMap<>();
-		nestedobj.put(1, FieldData.simple("Default Name"));
-		nestedobj.put(2, FieldData.simple(false));
-		nestedobj.put(3, FieldData.simple("NestedDefault1"));
-		nestedobj.put(4, map.get(Key.COMPLEX_1).clone());
+		nestedobj.put(1, FieldData.simple("Default Name").name("Name"));
+		nestedobj.put(2, FieldData.simple(false).name("Important"));
+		nestedobj.put(3, FieldData.simple("NestedDefault1").name("Description"));
+		nestedobj.put(4, map.get(Key.COMPLEX_1).clone().name("Nested Object"));
 		complexList.add(nestedobj);
 		
 		map.put(Key.COMPLEX_2, FieldData.complexList(nested2, new IEditorDisplayFormatter<Integer>() {
@@ -92,9 +92,11 @@ public class TestMain {
 			}
 			@Override
 			public String getEditorTooltip(Map<Integer, FieldData> dataMap) {
-				return null;
+				if (dataMap == null)
+					return null;
+				return (String) ( (SimpleFieldData) dataMap.get(3)).getValue();
 			}
-		}, complexList));
+		}, complexList).name("Spell List"));
 		
 		List<Integer> intlist = new LinkedList<>();
 		intlist.add(99);
@@ -102,7 +104,7 @@ public class TestMain {
 		intlist.add(97);
 		intlist.add(97);
 		intlist.add(97);
-		map.put(Key.LISTINT_1, FieldData.listInt(intlist));
+		map.put(Key.LISTINT_1, FieldData.listInt(intlist).name("Owned Numbers"));
 		
 		frame.getContentPane().add(new EnumMapEditor<Key>(
 				new IEditorOwner() {
