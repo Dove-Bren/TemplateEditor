@@ -111,16 +111,16 @@ public final class SimpleFieldData extends FieldData {
 		SimpleFieldData base = null;
 		switch (type) {
 		case BOOL:
-			comp = new BoolField("DELETE ME", (Boolean) value);
+			comp = new BoolField((Boolean) value);
 			break;
 		case DOUBLE:
-			comp = new DoubleField("DELETE ME", (Double) value);
+			comp = new DoubleField((Double) value);
 			break;
 		case INT:
-			comp = new IntField("DELETE ME", (Integer) value);
+			comp = new IntField((Integer) value);
 			break;
 		case STRING:
-			comp = new TextField("DELETE ME", (String) value);
+			comp = new TextField((String) value);
 			break;
 		case LIST_DOUBLE:
 			base = new SimpleFieldData(FieldType.DOUBLE, 0.0);
@@ -131,7 +131,7 @@ public final class SimpleFieldData extends FieldData {
 			base = new SimpleFieldData(FieldType.STRING, "");
 			
 			//Fallthrough for lists:
-			comp = new GenericListField<SimpleFieldData>("DELETE ME", base,
+			comp = new GenericListField<SimpleFieldData>(base,
 					(List<SimpleFieldData>) toList());
 		}
 		

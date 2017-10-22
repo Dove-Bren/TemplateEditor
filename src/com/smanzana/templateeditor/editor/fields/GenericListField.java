@@ -3,7 +3,6 @@ package com.smanzana.templateeditor.editor.fields;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +18,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.Border;
@@ -92,7 +90,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	private Map<EditorField<?>, T> fieldMap; // So we don't keep making them
 	private Map<ListItem, EditorField<?>> listMap;
 	
-	public GenericListField(String title, T baseEditor, List<T> fields) {
+	public GenericListField(T baseEditor, List<T> fields) {
 		this.base = baseEditor;
 		fieldMap = new HashMap<>();
 		listMap = new HashMap<>();
@@ -100,12 +98,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		//wrapper.add(Box.createHorizontalGlue());
 		UIColor.setColors(wrapper, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		dataList = new JPanel();
 		dataList.setLayout(new BoxLayout(dataList, BoxLayout.PAGE_AXIS));

@@ -2,7 +2,6 @@ package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,7 +14,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -53,18 +51,13 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 //	public static <T> NestedEditorField<T> create(String title, Map<T, FieldData<T>> fieldMap, IEditorDisplayFormatter<T> formatter) {
 //		return new NestedEditorField<T>(title, fieldMap, formatter);
 //	}
-	public NestedEditorField(String title, Map<Integer, FieldData> fieldMap, IEditorDisplayFormatter<Integer> formatter) {
+	public NestedEditorField(Map<Integer, FieldData> fieldMap, IEditorDisplayFormatter<Integer> formatter) {
 		this.dataMap = fieldMap; // Don't actually use it till we create nested editor
 		this.formatter = formatter;
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
 		UIColor.setColors(wrapper, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		JPanel comp = new JPanel(new BorderLayout());
 		display = new JTextField(20);

@@ -1,7 +1,6 @@
 package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EnumSet;
@@ -11,7 +10,6 @@ import java.util.Map;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.smanzana.templateeditor.uiutils.TextUtil;
@@ -23,17 +21,12 @@ public class EnumField<T extends Enum<T>> extends AEditorField<T> implements Act
 	private Map<T, String> prettyMap;
 	
 	@SuppressWarnings("unchecked")
-	public EnumField(String title, T startSelection) {
+	public EnumField(T startSelection) {
 		this.prettyMap = new HashMap<>();
 		
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		wrapper.add(Box.createHorizontalGlue());
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		combo = new JComboBox<>();
 		combo.setMinimumSize(new Dimension(50, 20));

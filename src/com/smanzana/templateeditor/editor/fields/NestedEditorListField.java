@@ -2,7 +2,6 @@ package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -59,7 +58,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	private JPanel wrapper;
 
 	
-	public NestedEditorListField(String title, Map<Integer, FieldData> baseMap,
+	public NestedEditorListField(Map<Integer, FieldData> baseMap,
 			List<Map<Integer, FieldData>> fields, IEditorDisplayFormatter<Integer> formatter) {
 		//this.formatter = formatter;
 		this.base = new DataWrapper(baseMap);
@@ -67,12 +66,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.LINE_AXIS));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
-		//wrapper.add(Box.createHorizontalGlue());
 		UIColor.setColors(wrapper, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		wrapper.add(label);
-		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		data = new DefaultListModel<>();
 		dataList = new JList<DataWrapper>(data);

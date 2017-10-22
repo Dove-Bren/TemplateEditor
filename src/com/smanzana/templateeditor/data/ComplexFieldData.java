@@ -61,10 +61,10 @@ public final class ComplexFieldData extends FieldData {
 	@Override
 	public EditorField<?> constructField() {
 		if (isList) {
-			return new NestedEditorListField("DELETE ME", nestedTypes, listValue, formatter);
+			return new NestedEditorListField(nestedTypes, listValue, formatter);
 		} else {
 			// Single complex.
-			EditorField<Map<Integer, FieldData>> comp = new NestedEditorField("DELETE ME", nestedTypes, formatter);
+			EditorField<Map<Integer, FieldData>> comp = new NestedEditorField(nestedTypes, formatter);
 			comp.setObject(nestedTypes);
 			return comp;
 		}
