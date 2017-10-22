@@ -1,6 +1,7 @@
 package com.smanzana.templateeditor.api;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,6 +140,9 @@ public class ObjectDataLoader<T> {
 			return;
 		
 		for (Field f : clazz.getDeclaredFields()) {
+			if (Modifier.isStatic(f.getModifiers()))
+				continue;
+			
 			list.add(new FieldWrapper(f, null)); // TODO pass in template object if exists
 		}
 		
