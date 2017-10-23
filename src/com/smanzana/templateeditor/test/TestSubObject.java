@@ -1,20 +1,30 @@
 package com.smanzana.templateeditor.test;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.smanzana.templateeditor.api.annotations.DataLoaderData;
 
 public class TestSubObject extends TestObject {
 
+	@DataLoaderData
 	private int subvalue;
 	
-	public List<Integer> intList;
+	@DataLoaderData
+	public TestObject omgtripplenested;
 	
 	public TestSubObject(String name, String desc, int value, boolean enabled, int subvalue) {
 		super(name, desc, value, enabled);
 		this.subvalue = subvalue;
-		this.intList = new LinkedList<>();
-		intList.add(55);
-		intList.add(67);
+		omgtripplenested = new TestObject("h1", "h2", 12, false);
 	}
 	
+	@Override
+	public String toString() {
+		String buf = super.toString();
+		
+		buf += "\nSubvalue: " + subvalue + "\t"
+				+ "Nested:\n===========================\n"
+				+ omgtripplenested.toString()
+				+ "\n=============================";
+		
+		return buf;
+	}
 }

@@ -10,18 +10,18 @@ import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 
 public class TestObject {
 	
-	private static class NestObject {
-		@DataLoaderName
-		private String name;
-		
-		@DataLoaderData
-		private int temperature;
-		
-		public NestObject(String name, int temperature) {
-			this.name = name;
-			this.temperature = temperature;
-		}
-	}
+//	private static class NestObject {
+//		@DataLoaderName
+//		private String name;
+//		
+//		@DataLoaderData
+//		private int temperature;
+//		
+//		public NestObject(String name, int temperature) {
+//			this.name = name;
+//			this.temperature = temperature;
+//		}
+//	}
 	
 	@DataLoaderDescription
 	public String description;
@@ -38,11 +38,11 @@ public class TestObject {
 	@DataLoaderData
 	public List<String> strlist;
 	
-	public NestObject template;
-	
-	@DataLoaderData(name="Nested Stuff")
-	@DataLoaderList(templateName = "template")
-	public List<NestObject> nestlist;
+//	public NestObject template;
+//	
+//	@DataLoaderData(name="Nested Stuff")
+//	@DataLoaderList(templateName = "template")
+//	public List<NestObject> nestlist;
 
 	public TestObject(String name, String description, int value, boolean enabled) {
 		super();
@@ -50,11 +50,25 @@ public class TestObject {
 		this.description = description;
 		this.value = value;
 		this.enabled = enabled;
-		template = new NestObject("NestBase", 55);
+//		template = new NestObject("NestBase", 55);
 		
 		strlist = new LinkedList<>();
-		nestlist = new LinkedList<>();
-		nestlist.add(new NestObject("Nest1", 1));
+//		nestlist = new LinkedList<>();
+//		nestlist.add(new NestObject("Nest1", 1));
+	}
+	
+	@Override
+	public String toString() {
+		String buf =  "Name: " + name + "\t"
+			 + "Description: " + description + "\t"
+			 + "Value: " + value + "\t"
+			 + "Enabled: " + enabled + "\t";
+		
+		buf += "Strlist:" + "\t";
+		for (String s : strlist)
+			buf += s + ",";
+		
+		return buf;
 	}
 	
 }

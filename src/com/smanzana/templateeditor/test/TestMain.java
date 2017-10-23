@@ -43,7 +43,7 @@ public class TestMain {
 		AUTO_2,
 	}
 	
-	static ObjectDataLoader<SimpleObject> loader;
+	static ObjectDataLoader<TestObject> loader;
 
 	public static void main(String[] args) {
 		try {
@@ -159,7 +159,7 @@ public class TestMain {
 		testList.add(new TestObject("name3", "desc3", 9, true));
 		map.put(Key.LISTAUTO_1, FieldData.complexObject(new ObjectDataLoader<TestObject>(template, testList)));
 		
-		TestMain.loader = new ObjectDataLoader<>(new SimpleObject("STR1", "DESC2", 13, true));
+		TestMain.loader = new ObjectDataLoader<>(new TestSubObject("STR1", "DESC2", 13, true, 55));
 		if (!TestMain.loader.isValid())
 			System.exit(1);
 		
@@ -227,7 +227,7 @@ public class TestMain {
 	
 	private static void close() {
 		// Check out what we get back! or something!
-		SimpleObject o = loader.fetchEdittedValue();
+		TestObject o = loader.fetchEdittedValue();
 		System.out.print(o);
 	}
 

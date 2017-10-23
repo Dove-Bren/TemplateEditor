@@ -1,5 +1,6 @@
 package com.smanzana.templateeditor.data;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -69,8 +70,11 @@ public final class SimpleFieldData extends FieldData {
 	}
 
 	public void setValue(Object value) {
-		if (assertType(value))
+		if (assertType(value)) {
+			// Editor spawned for LIST types is List<SimpleFieldData>.
+			// Need to convert from SimpleFieldData back to native list
 			this.value = value;
+		}
 		else
 			throw new RuntimeException(new ClassCastException("Invalid type for SimpleFieldData with type "
 					+ type.name() + ": " + value));
@@ -166,8 +170,35 @@ public final class SimpleFieldData extends FieldData {
 		return list;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void fillFromField(EditorField<?> field) {
-		setValue(field.getObject());
+		Object value = field.getObject();
+		Object realValue;
+		if (type == FieldType.LIST_DOUBLE) {
+			List<SimpleFieldData> list = (List<SimpleFieldData>) value;
+			List<Double> newlist = new ArrayList<>(list.size());
+			for (SimpleFieldData d : list) {
+				newlist.add((Double) d.getValue());
+			}
+			realValue = newlist;
+		} else if (type == FieldType.LIST_STRING) {
+			List<SimpleFieldData> list = (List<SimpleFieldData>) value;
+			List<String> newlist = new ArrayList<>(list.size());
+			for (SimpleFieldData d : list) {
+				newlist.add((String) d.getValue());
+			}
+			realValue = newlist;
+		} else if (type == FieldType.LIST_INT) {
+			List<SimpleFieldData> list = (List<SimpleFieldData>) value;
+			List<Integer> newlist = new ArrayList<>(list.size());
+			for (SimpleFieldData d : list) {
+				newlist.add((Integer) d.getValue());
+			}
+			realValue = newlist;
+		} else {
+			realValue = value;
+		}
+		setValue(realValue);
 	}
 }
