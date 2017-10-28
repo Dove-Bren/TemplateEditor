@@ -20,6 +20,7 @@ import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.api.IEditorDisplayFormatter;
 import com.smanzana.templateeditor.api.ObjectDataLoader;
+import com.smanzana.templateeditor.api.ObjectDataLoader.IFactory;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.editor.EnumMapEditor;
 import com.smanzana.templateeditor.editor.fields.GrabListField;
@@ -153,11 +154,17 @@ public class TestMain {
 		map.put(Key.AUTO_1, FieldData.complexObject(loader).name("Auto Value"));
 		
 		List<TestObject> testList = new LinkedList<>();
+		IFactory<TestObject> testFactory = new IFactory<TestObject>() {
+			@Override
+			public TestObject construct() {
+				return new TestObject("", "", 0, false);
+			}
+		};
 		TestObject template = new TestObject("name", "desc", 1, true);
 		testList.add(new TestObject("name1", "desc1", 1, false));
 		testList.add(new TestObject("name2", "desc2", 4, true));
 		testList.add(new TestObject("name3", "desc3", 9, true));
-		map.put(Key.LISTAUTO_1, FieldData.complexObject(new ObjectDataLoader<TestObject>(template, testList)));
+		map.put(Key.LISTAUTO_1, FieldData.complexObject(new ObjectDataLoader<TestObject>(template, testList, testFactory)));
 		
 		TestMain.loader = new ObjectDataLoader<>(new TestSubObject("STR1", "DESC2", 13, true, 55));
 		if (!TestMain.loader.isValid())

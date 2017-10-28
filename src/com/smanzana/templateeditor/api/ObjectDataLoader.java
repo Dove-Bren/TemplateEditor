@@ -1,6 +1,9 @@
 package com.smanzana.templateeditor.api;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -29,19 +32,26 @@ import com.smanzana.templateeditor.uiutils.TextUtil;
  */
 public class ObjectDataLoader<T> {
 	
+	public static interface IFactory<T> {
+		/** Construct a new T. All @DataLoaderData fields will be overwritten **/ 
+		public T construct();
+	}
+	
 	private static class FieldWrapper {
 		public Field field;
 		public Object template;
 		public String name;
 		public String desc;
 		public int key;
+		public IFactory<?> factory;
 		
-		public FieldWrapper(Field field, int key, Object template, String name, String desc) {
+		public FieldWrapper(Field field, int key, Object template, IFactory<?> factory, String name, String desc) {
 			this.field = field;
 			this.template = template;
 			this.name = name;
 			this.desc = desc;
 			this.key = key;
+			this.factory = factory;
 		}
 	}
 	
@@ -57,17 +67,19 @@ public class ObjectDataLoader<T> {
 		public DataWrapper(FieldData data, ObjectDataLoader<?> loader, boolean isList) {
 			this.data = data;
 			this.loader = loader;
-			isList = false;
+			this.isList = isList;
 		}
 	}
 
 	private T templateObject; // Raw object for dissolution
-	private List<T> valueList; // Raw list of values
+	//private List<T> valueList; // Raw list of values
 	private int formattingNameIndex; // What index (in template) to use for the name. Not optional.
 	private int formattingDescIndex; // what index (in template) to us for description. -1 means none.
-	private Map<Integer, DataWrapper> template;
 	private Map<Integer, FieldWrapper> fieldMap;
-	private List<Map<Integer, DataWrapper>> listTemplates;
+	private Map<Integer, DataWrapper> template;
+	private List<Map<Integer, FieldData>> listTemplates; // Templates of initialized data. Used to create later complex data
+														 // TODO rip it out. If anything, sore the complex data instead
+	private IFactory<T> factory;
 	private boolean valid;
 	private int keyIndex;
 	
@@ -89,7 +101,7 @@ public class ObjectDataLoader<T> {
 	 * @param templateObject
 	 */
 	public ObjectDataLoader(T templateObject) {
-		this(templateObject, null);
+		this(templateObject, null, null);
 	}
 	
 	/**
@@ -103,11 +115,17 @@ public class ObjectDataLoader<T> {
 	 * @param templateObject
 	 * @param listItems
 	 */
-	public ObjectDataLoader(T templateObject, List<T> listItems) {
+	public ObjectDataLoader(T templateObject, List<T> listItems, IFactory<T> factory) {
+		this(templateObject, listItems, factory, "");
+	}
+	
+	@SuppressWarnings("unchecked")
+	private ObjectDataLoader(T templateObject, List<T> listItems, IFactory<?> factory, String empty) {
 		this();
 		
 		this.templateObject = templateObject;
-		this.valueList = listItems;
+		this.factory = (IFactory<T>) factory;
+		//this.valueList = listItems;
 		
 		try {
 			this.dissolve();
@@ -124,7 +142,7 @@ public class ObjectDataLoader<T> {
 		if (formattingNameIndex == -1)
 			formattingNameIndex = 0;
 		
-		extractListMaps();
+		extractListMaps(listItems);
 	}
 	
 	private int nextKey() {
@@ -166,7 +184,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			int key = wrapper.key;
-			DataWrapper data = wrapField(f, val, wrapper.template, pullName(wrapper), pullDesc(wrapper));
+			DataWrapper data = wrapField(f, val, wrapper.template, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -209,6 +227,7 @@ public class ObjectDataLoader<T> {
 			Object template = null;
 			String name = null;
 			String desc = null;
+			IFactory<?> factory = null;
 			if (aList != null && aList.templateName() != null) {
 				// Search for field by this name in current class
 				// Also add it to list of ignored fields
@@ -236,6 +255,13 @@ public class ObjectDataLoader<T> {
 					continue;
 				}
 				
+				if (template == null) {
+					System.err.println("Cannot use null template for list in ObjectDataLoader: "
+							+ "List: " + f.getName() + " - Template: " + reference.getName() + " - "
+							+ "Class: " + clazz.getName());
+					continue;
+				}
+				
 				// Properly found a reference. Remove an add it where appropriate
 				FieldWrapper booted = buffer.remove(reference.getName());
 				if (booted != null) {
@@ -246,6 +272,82 @@ public class ObjectDataLoader<T> {
 						descKey = -1;
 				}
 				removedNames.add(reference.getName());
+				
+				// Need factory. If they supplied a name, use that method in the same class.
+				// If not, try default no param constructor
+				if (aList.factoryName() != null && !aList.factoryName().trim().isEmpty()) {
+					// They provided a name
+					Method factoryMethod;
+					try {
+						factoryMethod = clazz.getDeclaredMethod(aList.factoryName(), (Class<?>[]) null);
+						if (!factoryMethod.getReturnType().equals(template.getClass())) {
+							System.err.println("Found factory, but return type (" + factoryMethod.getReturnType().getName()
+									+ ") does not match type of object stored at field ("
+									+ template.getClass() + ") (field: " + f.getName() + "    class: "
+									+ clazz.getName() + ")");
+							continue;
+						}
+					} catch (NoSuchMethodException e) {
+						System.err.println("Was given factory method name " + aList.factoryName() + " for field "
+								+ f.getName() + " (class " + clazz.getName() + ") but lookup failed!");
+						continue;
+					}
+					factory = new IFactory<Object>() {
+						@Override
+						public Object construct() {
+							try {
+								return factoryMethod.invoke(o, (Object[]) null);
+							} catch (IllegalAccessException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IllegalArgumentException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (InvocationTargetException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							return null;
+						}
+					};
+				
+				}
+				
+				if (factory == null) {
+					// Try no-param constructor
+					System.out.println("Trying constructor");
+					Constructor<?> cons;
+					try {
+						cons = template.getClass().getConstructor((Class<?>[]) null);
+					} catch (NoSuchMethodException | SecurityException e) {
+						System.err.println("Could not find default constructor for nested class "
+								+ template.getClass().getName() + " (Listed in class "
+								+ clazz.getName() + " | field " + f.getName() + ")");
+						continue;
+					}
+					factory = new IFactory<Object>() {
+						@Override
+						public Object construct() {
+							try {
+								return cons.newInstance((Object[]) null);
+							} catch (InstantiationException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IllegalAccessException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IllegalArgumentException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (InvocationTargetException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							return null;
+						}
+					};
+					System.out.println("Constructor get (" + f.getName() + ")");
+				}
 			}
 			
 			int key = nextKey();
@@ -266,7 +368,7 @@ public class ObjectDataLoader<T> {
 			if (descKey == -1)
 				descKey = key;
 			
-			buffer.put(f.getName(), new FieldWrapper(f, key, template, name, desc));
+			buffer.put(f.getName(), new FieldWrapper(f, key, template, factory, name, desc));
 			
 		}
 		
@@ -284,7 +386,7 @@ public class ObjectDataLoader<T> {
 	}
 	
 	// Takes template and creates copies for each list value
-	private void extractListMaps() {
+	private void extractListMaps(List<T> valueList) {
 		// Assumes we're valid
 		
 		if (valueList == null)
@@ -295,13 +397,13 @@ public class ObjectDataLoader<T> {
 		for (T item : valueList) {
 			// For each item, create a copy of template by pulling out fields
 			
-			Map<Integer, DataWrapper> rowMap = new HashMap<>();
+			Map<Integer, FieldData> rowMap = new HashMap<>();
 			for (Entry<Integer, FieldWrapper> row : fieldMap.entrySet()) {
 				// Type-safe cause of generics; we know these fields exist in list objects
 				Field field = row.getValue().field;
 				try {
-					rowMap.put(row.getKey(), wrapField(field, field.get(item), row.getValue().template,
-							pullName(row.getValue()), pullDesc(row.getValue())));
+					rowMap.put(row.getKey(), wrapField(field, field.get(item), row.getValue().template, row.getValue().factory,
+							pullName(row.getValue()), pullDesc(row.getValue())).data);
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
 					System.out.println("Failed parsing field " + field.getName() + " on child object type " + templateObject.getClass()
@@ -330,7 +432,7 @@ public class ObjectDataLoader<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <U> DataWrapper wrapField(Field f, Object value, Object listTemplate, String name, String description) {
+	private <U> DataWrapper wrapField(Field f, Object value, Object listTemplate, IFactory<?> factory, String name, String description) {
 		Class<?> clazz = f.getType();
 		if (clazz.isPrimitive()) {
 			
@@ -366,8 +468,10 @@ public class ObjectDataLoader<T> {
 			
 			// Try to use template
 			if (listTemplate != null) {
+				if (factory == null)
+					System.out.println("Null factory on list");
 				@SuppressWarnings("rawtypes")
-				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value);
+				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
 				DataWrapper wrapper = new DataWrapper(
 						FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData())
 						.name(name).desc(description),
@@ -456,15 +560,7 @@ public class ObjectDataLoader<T> {
 		if (!valid)
 			return null;
 		
-		if (listTemplates == null)
-			return null;
-		
-		List<Map<Integer, FieldData>> ret = new ArrayList<>(listTemplates.size());
-		for (Map<Integer, DataWrapper> map : listTemplates) {
-			ret.add(unwrapData(map));
-		}
-		
-		return ret;
+		return listTemplates;
 	}
 	
 	/**
@@ -479,9 +575,7 @@ public class ObjectDataLoader<T> {
 	 * @return
 	 */
 	public T fetchEdittedValue() {
-		form();
-		
-		return templateObject;
+		return formSingle();
 	}
 	
 	/**
@@ -489,27 +583,20 @@ public class ObjectDataLoader<T> {
 	 * of objects provided during construction.
 	 * @return
 	 */
-	public List<T> fetchEdittedList() {
-		form();
-		
-		return valueList;
+	public List<T> fetchEdittedList(ComplexFieldData data) {
+		return formList(data);
 	}
 	
-	private void form() {
+	private T formSingle() {
 		// Opposite of Dissolve hehe
 		// Use map of int keys to get data from template+listTemplates.
 		// Use same keys and fieldMap to find the field to insert it into.
 		// Insert into templateObject or each element of valueList if non-null
-		if (valueList == null)
-			form(templateObject, template);
-		else {
-			for (int i = 0; i < valueList.size(); i++) {
-				form(valueList.get(i), listTemplates.get(i));
-			}
-		}
+		formSingleElement(templateObject, template);
+		return templateObject;
 	}
 	
-	private void form(T obj, Map<Integer, DataWrapper> dataMap) {
+	private void formSingleElement(T obj, Map<Integer, DataWrapper> dataMap) {
 		// Use fields from fieldMap
 		for (Integer key : dataMap.keySet()) {
 			FieldWrapper wrapper = fieldMap.get(key);
@@ -526,8 +613,10 @@ public class ObjectDataLoader<T> {
 						System.err.println("Found complex data with no associated loader: " + wrapper.field.getName());
 						continue;
 					}
+					ComplexFieldData cfd = (ComplexFieldData) data.data;
 					if (data.isList) {
-						wrapper.field.set(obj, data.loader.fetchEdittedList());
+						data.loader.listTemplates = cfd.getListData();
+						wrapper.field.set(obj, data.loader.fetchEdittedList((ComplexFieldData) data.data));
 					} else {
 						wrapper.field.set(obj, data.loader.fetchEdittedValue());
 					}
@@ -542,6 +631,41 @@ public class ObjectDataLoader<T> {
 						+ wrapper.field.getName());
 			}
 		}
+	}
+	
+	private List<T> formList(ComplexFieldData fieldData) {
+		// We are a loader that was given a list.
+		// That means template is our template and fieldMap is a map per object
+		// We need to get list of maps from complex list object, and then
+		// for each one, do a formSingle
+		// That means we'll hvae to create T's...
+		
+		// We have a factory. We can do this.
+		// For each map passed back, construct a factory and then formSingleElement on it
+		
+		// We need something to ask for maps to iterate over.
+		// We should either get or have a handle to the source of our list.
+		// Likely we should have it. So invert the data flow for objectloaders
+		// that are lists; instead of creating a complex from it, the loader
+		// creates the complex and you can get a reference to it
+		
+		List<T> output = new LinkedList<>();
+		
+		if (fieldData != null)
+		for (Map<Integer, FieldData> realValues : fieldData.getListData()) {
+			T obj = factory.construct();
+			
+			for (Integer key : realValues.keySet()) {
+				// Grant real FieldData onto template's data wrapper
+				template.get(key).data = realValues.get(key);
+			}
+			
+			formSingleElement(obj, template);
+			
+			output.add(obj);
+		}
+		
+		return output;
 	}
 	
 }

@@ -6,4 +6,5 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DataLoaderList {
 	String templateName();
+	String factoryName() default "";
 }
