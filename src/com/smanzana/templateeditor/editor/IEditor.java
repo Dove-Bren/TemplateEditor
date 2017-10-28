@@ -4,7 +4,9 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 
+import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
+import com.smanzana.templateeditor.api.ObjectDataLoader;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 
 public interface IEditor<T> {
@@ -25,6 +27,10 @@ public interface IEditor<T> {
 		public EditorField<?> getField() {
 			return field;
 		}
+	}
+	
+	public static <T> TemplateEditor<Integer> createTemplateEditor(IEditorOwner owner, ObjectDataLoader<T> loader) {
+		return new TemplateEditor<>(owner, loader.getFieldMap());
 	}
 	
 	/**
