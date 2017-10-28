@@ -315,7 +315,6 @@ public class ObjectDataLoader<T> {
 				
 				if (factory == null) {
 					// Try no-param constructor
-					System.out.println("Trying constructor");
 					Constructor<?> cons;
 					try {
 						cons = template.getClass().getConstructor((Class<?>[]) null);
@@ -346,7 +345,6 @@ public class ObjectDataLoader<T> {
 							return null;
 						}
 					};
-					System.out.println("Constructor get (" + f.getName() + ")");
 				}
 			}
 			
@@ -451,7 +449,6 @@ public class ObjectDataLoader<T> {
 		if (clazz.isAssignableFrom(List.class)) {
 			// It's a list
 			Class<?> subclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[0];
-			System.out.println("Debug: Got generic type " + subclazz + " for list: " + clazz);
 			
 			if (subclazz.equals(String.class))
 				return DataWrapper.wrap(FieldData.listString((List<String>) value).name(name).desc(description));
@@ -468,8 +465,6 @@ public class ObjectDataLoader<T> {
 			
 			// Try to use template
 			if (listTemplate != null) {
-				if (factory == null)
-					System.out.println("Null factory on list");
 				@SuppressWarnings("rawtypes")
 				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
 				DataWrapper wrapper = new DataWrapper(
