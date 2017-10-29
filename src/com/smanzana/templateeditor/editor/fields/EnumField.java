@@ -22,6 +22,11 @@ public class EnumField<T extends Enum<T>> extends AEditorField<T> implements Act
 	
 	@SuppressWarnings("unchecked")
 	public EnumField(T startSelection) {
+		this((Class<T>) startSelection.getClass(), startSelection);
+	}
+	
+	
+	private EnumField(Class<T> clazz, T startSelection) {
 		this.prettyMap = new HashMap<>();
 		
 		wrapper = new JPanel();
@@ -32,7 +37,7 @@ public class EnumField<T extends Enum<T>> extends AEditorField<T> implements Act
 		combo.setMinimumSize(new Dimension(50, 20));
 		combo.setMaximumSize(new Dimension(300, 20));
 		combo.setPreferredSize(new Dimension(100, 20));
-		EnumSet.allOf((Class<T>) startSelection.getClass()).forEach((e) -> {
+		EnumSet.allOf(clazz).forEach((e) -> {
 			String pretty = TextUtil.pretty(e.name());
 			prettyMap.put(e, pretty);
 			combo.addItem(pretty);

@@ -18,6 +18,7 @@ import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 import com.smanzana.templateeditor.data.ComplexFieldData;
+import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 
@@ -235,6 +236,7 @@ public class ObjectDataLoader<T> {
 				Field reference;
 				try {
 					reference = clazz.getDeclaredField(aList.templateName());
+					reference.setAccessible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 					System.err.println("Could not grab referenced field " + aList.templateName()
@@ -429,7 +431,7 @@ public class ObjectDataLoader<T> {
 		return wrapper.desc; 
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private <U> DataWrapper wrapField(Field f, Object value, Object listTemplate, IFactory<?> factory, String name, String description) {
 		Class<?> clazz = f.getType();
 		if (clazz.isPrimitive()) {
@@ -444,7 +446,9 @@ public class ObjectDataLoader<T> {
 			return null;
 		}
 		if (clazz.equals(String.class))
-			return DataWrapper.wrap(FieldData.simple((String) value).name(name));
+			return DataWrapper.wrap(FieldData.simple((String) value).name(name).desc(description));
+		if (clazz.isEnum())
+			return DataWrapper.wrap(FieldData.enumSelection((Enum) value).name(name).desc(description));
 		
 		if (clazz.isAssignableFrom(List.class)) {
 			// It's a list
@@ -465,7 +469,6 @@ public class ObjectDataLoader<T> {
 			
 			// Try to use template
 			if (listTemplate != null) {
-				@SuppressWarnings("rawtypes")
 				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
 				DataWrapper wrapper = new DataWrapper(
 						FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData())
@@ -602,6 +605,8 @@ public class ObjectDataLoader<T> {
 			try {
 				if (data.data instanceof SimpleFieldData) {
 					wrapper.field.set(obj, ((SimpleFieldData)data.data).getValue());
+				} else if (data.data instanceof EnumFieldData<?>) {
+					wrapper.field.set(obj, ((EnumFieldData<?>) data.data).getSelection());
 				} else if (data.data instanceof ComplexFieldData) {
 					// We MUST have a loader, then
 					if (data.loader == null) {
@@ -615,6 +620,8 @@ public class ObjectDataLoader<T> {
 					} else {
 						wrapper.field.set(obj, data.loader.fetchEdittedValue());
 					}
+				} else {
+					System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
 				}
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();

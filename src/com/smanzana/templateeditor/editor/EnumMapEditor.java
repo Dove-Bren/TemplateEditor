@@ -75,7 +75,6 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		
 
 			if (row.getValue().getDescription() != null) {
-				System.out.println("Tooltip for " + keyName);
 				comp.getComponent().setToolTipText(row.getValue().getFormattedDescription());
 				label.setToolTipText(row.getValue().getFormattedDescription());
 			}
