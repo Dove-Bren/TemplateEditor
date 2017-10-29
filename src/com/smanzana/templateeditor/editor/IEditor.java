@@ -33,10 +33,10 @@ public interface IEditor<T> {
 		return new TemplateEditor<>(owner, loader.getFieldMap());
 	}
 	
-	public static <T> TemplateEditor<Integer> createTemplateEditor(IEditorOwner owner, T obj) {
-		return new TemplateEditor<>(owner, 
-				new ObjectDataLoader<>(obj).getFieldMap());
-	}
+//	public static <T> TemplateEditor<Integer> createTemplateEditor(IEditorOwner owner, T obj) {
+//		return new TemplateEditor<>(owner, 
+//				new ObjectDataLoader<>(obj).getFieldMap());
+//	}
 	
 	/**
 	 * Returns JSwing component that will represent this editor and all nested fields

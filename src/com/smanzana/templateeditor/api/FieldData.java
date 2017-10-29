@@ -105,7 +105,7 @@ public abstract class FieldData implements Cloneable {
 	}
 	
 	public FieldData description(List<String> descriptions) {
-		if (description != null)
+		if (descriptions != null)
 			for (String s : descriptions)
 				desc(s);
 		

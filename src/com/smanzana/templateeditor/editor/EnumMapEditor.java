@@ -53,16 +53,13 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 		for (Entry<T,FieldData> row : enummap.entrySet()) {
 			String keyName = row.getValue().getName();
 			if (keyName == null)
-				TextUtil.pretty(row.getKey().name());
+				keyName = TextUtil.pretty(row.getKey().name());
 			
 			comp = row.getValue().constructField();
 			
 			if (comp == null)
 				continue;
 			
-			if (row.getValue().getDescription() != null) {
-				comp.getComponent().setToolTipText(row.getValue().getFormattedDescription());
-			}
 			UIColor.setColors(comp.getComponent(), UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 			comp.getComponent().setMaximumSize(new Dimension(Short.MAX_VALUE, comp.getComponent().getPreferredSize().height));
 			fields.put(row.getKey(), new DataPair<T>(row.getValue(), comp));
@@ -76,6 +73,13 @@ public class EnumMapEditor<T extends Enum<T>> extends JScrollPane implements IEd
 			label.setBorder(new EmptyBorder(0, 5, 0, 0));
 			UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
 		
+
+			if (row.getValue().getDescription() != null) {
+				System.out.println("Tooltip for " + keyName);
+				comp.getComponent().setToolTipText(row.getValue().getFormattedDescription());
+				label.setToolTipText(row.getValue().getFormattedDescription());
+			}
+			
 			cons.gridy = consRow++;
 			cons.gridx = 0;
 			cons.weightx = 0.0;
