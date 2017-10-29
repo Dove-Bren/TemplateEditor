@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.smanzana.templateeditor.data.ComplexFieldData;
+import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
@@ -92,6 +93,14 @@ public abstract class FieldData implements Cloneable {
 	public static <T> SubsetFieldData<T> subset(List<T> options, List<T> selected,
 			GrabListField.DisplayFormatter<T> formatter) {
 		return new SubsetFieldData<T>(options, formatter, selected);
+	}
+	
+	public static CustomFieldData custom(ICustomData data) {
+		return new CustomFieldData(data);
+	}
+	
+	public static CustomFieldData customList(ICustomData base, List<ICustomData> activeList) {
+		return new CustomFieldData(base, activeList);
 	}
 	
 	public FieldData description(String description) {

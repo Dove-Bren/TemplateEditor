@@ -3,16 +3,19 @@ package com.smanzana.templateeditor.test;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.smanzana.templateeditor.api.ICustomData;
 import com.smanzana.templateeditor.api.annotations.DataLoaderData;
 import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
 import com.smanzana.templateeditor.api.annotations.DataLoaderFactory;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
+import com.smanzana.templateeditor.editor.fields.EditorField;
+import com.smanzana.templateeditor.editor.fields.IntField;
 
 public class TestObject {
 	
 	@DataLoaderFactory("makenew")
-	public static class NestObject {
+	public static class NestObject implements ICustomData {
 		@DataLoaderName
 		private String name;
 		
@@ -31,6 +34,16 @@ public class TestObject {
 		
 		public static NestObject makenew() {
 			return new NestObject("nest", 0);
+		}
+
+		@Override
+		public EditorField<?> getField() {
+			return new IntField(temperature);
+		}
+
+		@Override
+		public void fillFromField(EditorField<?> field) {
+			this.temperature = (Integer) field.getObject();
 		}
 	}
 	

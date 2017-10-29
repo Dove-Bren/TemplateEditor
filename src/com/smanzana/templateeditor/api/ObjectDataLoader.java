@@ -19,6 +19,7 @@ import com.smanzana.templateeditor.api.annotations.DataLoaderFactory;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 import com.smanzana.templateeditor.data.ComplexFieldData;
+import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.uiutils.TextUtil;
@@ -568,6 +569,19 @@ public class ObjectDataLoader<T> {
 			
 			// Try to use template
 			if (listTemplate != null) {
+				
+				//Check if it's a piece of CustomData
+				if (ICustomData.class.isAssignableFrom(subclazz)) {
+					System.out.println(">> Accepted (list) " + subclazz.getName());
+					List<ICustomData> customlist = new LinkedList<>();
+					for (ICustomData d : (List<? extends ICustomData>) value) {
+						customlist.add(d);
+					}
+					return DataWrapper.wrap(new CustomFieldData((ICustomData) listTemplate, customlist));
+				} else {
+					System.out.println("Bounced (list) " + subclazz.getName());
+				}
+				
 				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
 				DataWrapper wrapper = new DataWrapper(
 						FieldData.complexList(loader.getFieldMap(), loader.getFormatter(), loader.getListData())
@@ -585,6 +599,15 @@ public class ObjectDataLoader<T> {
 		
 		// TODO nice feature would be registered listeners that could check and see if they're applicable
 		// Then pass off to them.
+		
+		// None of the above. Check if it's a piece of CustomData
+		if (ICustomData.class.isAssignableFrom(clazz)) {
+			System.out.println(">> Accepted " + clazz.getName());
+			ICustomData custom = (ICustomData) value;
+			return DataWrapper.wrap(FieldData.custom(custom));
+		} else {
+			System.out.println("Bounced " + clazz.getName());
+		}
 		
 		// Nothing else; assume nested complex class
 		ObjectDataLoader<?> loader = new ObjectDataLoader<>(value);
@@ -719,6 +742,12 @@ public class ObjectDataLoader<T> {
 					} else {
 						wrapper.field.set(obj, data.loader.fetchEdittedValue());
 					}
+				} else if (data.data instanceof CustomFieldData) {
+					CustomFieldData cfd = (CustomFieldData) data.data;
+					if (cfd.isList()) {
+						wrapper.field.set(obj, cfd.getDataList());
+					} else
+						wrapper.field.set(obj, cfd.getData());
 				} else {
 					System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
 				}
