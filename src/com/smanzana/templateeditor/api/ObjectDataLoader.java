@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import com.smanzana.templateeditor.api.annotations.DataLoaderData;
 import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
+import com.smanzana.templateeditor.api.annotations.DataLoaderFactory;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 import com.smanzana.templateeditor.data.ComplexFieldData;
@@ -226,6 +227,7 @@ public class ObjectDataLoader<T> {
 				continue;
 			
 			Object template = null;
+			Class<?> templateClass = null;
 			String name = null;
 			String desc = null;
 			IFactory<?> factory = null;
@@ -250,7 +252,8 @@ public class ObjectDataLoader<T> {
 				}
 				
 				try {
-				template = reference.get(o);
+					template = reference.get(o);
+					templateClass = reference.getType();
 				} catch (Exception e) {
 					e.printStackTrace();
 					System.err.println("Failed field fetch for referenced field " + reference.getName());
@@ -282,10 +285,10 @@ public class ObjectDataLoader<T> {
 					Method factoryMethod;
 					try {
 						factoryMethod = clazz.getDeclaredMethod(aList.factoryName(), (Class<?>[]) null);
-						if (!factoryMethod.getReturnType().equals(template.getClass())) {
+						if (!factoryMethod.getReturnType().equals(templateClass)) {
 							System.err.println("Found factory, but return type (" + factoryMethod.getReturnType().getName()
 									+ ") does not match type of object stored at field ("
-									+ template.getClass() + ") (field: " + f.getName() + "    class: "
+									+ templateClass + ") (field: " + f.getName() + "    class: "
 									+ clazz.getName() + ")");
 							continue;
 						}
@@ -315,14 +318,105 @@ public class ObjectDataLoader<T> {
 				
 				}
 				
-				if (factory == null) {
+				if (factory == null && templateClass.isAnnotationPresent(DataLoaderFactory.class)) {
+					DataLoaderFactory aFact = templateClass.getAnnotation(DataLoaderFactory.class);
+					// If aFact has a string, use that method as factory.
+					// Otherwise, assume 'construct()' is defined
+					if (aFact.value() != null && !aFact.value().trim().isEmpty()) {
+						String methodname = aFact.value();
+						// They provided a name
+						Method factoryMethod;
+						try {
+							factoryMethod = templateClass.getDeclaredMethod(methodname, (Class<?>[]) null);
+							if (!factoryMethod.getReturnType().equals(templateClass)) {
+								System.err.println("Found factory, but return type (" + factoryMethod.getReturnType().getName()
+										+ ") does not match type of object stored at field ("
+										+ templateClass + ") (field: " + f.getName() + "    class: "
+										+ clazz.getName() + ")");
+								continue;
+							}
+							if (!Modifier.isStatic(factoryMethod.getModifiers())) {
+								System.err.println("Found named factory, but it's non-static! ("
+									+ "class: " + templateClass.getName() + ")");
+							}
+						} catch (NoSuchMethodException e) {
+							System.err.println("Was given factory method name " + methodname + " for field "
+									+ f.getName() + " (class " + templateClass.getName() + ") but lookup failed!");
+							continue;
+						}
+						factory = new IFactory<Object>() {
+							@Override
+							public Object construct() {
+								try {
+									return factoryMethod.invoke(null, (Object[]) null);
+								} catch (IllegalAccessException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (IllegalArgumentException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (InvocationTargetException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								return null;
+							}
+						};
+					}
+					
+					if (factory == null) {
+						// Assume a 'construct()' method
+						String methodname = "construct";
+						// They provided a name
+						Method factoryMethod;
+						try {
+							factoryMethod = templateClass.getDeclaredMethod(methodname, (Class<?>[]) null);
+							if (!factoryMethod.getReturnType().equals(templateClass)) {
+								System.err.println("Found factory, but return type (" + factoryMethod.getReturnType().getName()
+										+ ") does not match type of object stored at field ("
+										+ templateClass + ") (field: " + f.getName() + "    class: "
+										+ templateClass.getName() + ")");
+								continue;
+							}
+							if (!Modifier.isStatic(factoryMethod.getModifiers())) {
+								System.err.println("Found default (construct) factory, but it's non-static! ("
+									+ "class: " + templateClass.getName() + ")");
+							}
+						} catch (NoSuchMethodException e) {
+							System.err.println("Could not find construct() factory method for @DataLoaderFactory marked class " 
+									+ templateClass.getName() + ".");
+							continue;
+						}
+						factory = new IFactory<Object>() {
+							@Override
+							public Object construct() {
+								try {
+									return factoryMethod.invoke(null, (Object[]) null);
+								} catch (IllegalAccessException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (IllegalArgumentException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (InvocationTargetException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								return null;
+							}
+						};
+					}
+				}
+				
+				if (factory == null && !Modifier.isAbstract(templateClass.getModifiers())
+						&& !Modifier.isInterface(templateClass.getModifiers())) {
 					// Try no-param constructor
 					Constructor<?> cons;
 					try {
-						cons = template.getClass().getConstructor((Class<?>[]) null);
+						cons = templateClass.getConstructor((Class<?>[]) null);
 					} catch (NoSuchMethodException | SecurityException e) {
 						System.err.println("Could not find default constructor for nested class "
-								+ template.getClass().getName() + " (Listed in class "
+								+ templateClass.getName() + " (Listed in class "
 								+ clazz.getName() + " | field " + f.getName() + ")");
 						continue;
 					}
@@ -347,6 +441,11 @@ public class ObjectDataLoader<T> {
 							return null;
 						}
 					};
+				}
+				
+				if (factory == null) {
+					System.err.println("Unable to resolve factory for complex list type " + templateClass.getName()
+					 + " (Field: " + reference.getName() + " | class " + clazz.getName());
 				}
 			}
 			

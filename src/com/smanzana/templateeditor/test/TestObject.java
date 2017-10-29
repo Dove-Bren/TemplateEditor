@@ -5,11 +5,13 @@ import java.util.List;
 
 import com.smanzana.templateeditor.api.annotations.DataLoaderData;
 import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
+import com.smanzana.templateeditor.api.annotations.DataLoaderFactory;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 
 public class TestObject {
 	
+	@DataLoaderFactory("makenew")
 	public static class NestObject {
 		@DataLoaderName
 		private String name;
@@ -22,13 +24,13 @@ public class TestObject {
 			this.temperature = temperature;
 		}
 		
-		public NestObject() {
-			this("", 0);
-		}
-		
 		@Override
 		public String toString() {
 			return "[Name: " + name + "|temp: " + temperature +"]";
+		}
+		
+		public static NestObject makenew() {
+			return new NestObject("nest", 0);
 		}
 	}
 	
