@@ -572,14 +572,13 @@ public class ObjectDataLoader<T> {
 				
 				//Check if it's a piece of CustomData
 				if (ICustomData.class.isAssignableFrom(subclazz)) {
-					System.out.println(">> Accepted (list) " + subclazz.getName());
 					List<ICustomData> customlist = new LinkedList<>();
 					for (ICustomData d : (List<? extends ICustomData>) value) {
 						customlist.add(d);
 					}
-					return DataWrapper.wrap(new CustomFieldData((ICustomData) listTemplate, customlist));
+					return DataWrapper.wrap(new CustomFieldData((ICustomData) listTemplate, customlist)
+							.name(name).desc(description));
 				} else {
-					System.out.println("Bounced (list) " + subclazz.getName());
 				}
 				
 				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
@@ -602,11 +601,9 @@ public class ObjectDataLoader<T> {
 		
 		// None of the above. Check if it's a piece of CustomData
 		if (ICustomData.class.isAssignableFrom(clazz)) {
-			System.out.println(">> Accepted " + clazz.getName());
 			ICustomData custom = (ICustomData) value;
-			return DataWrapper.wrap(FieldData.custom(custom));
+			return DataWrapper.wrap(FieldData.custom(custom).name(name).desc(description));
 		} else {
-			System.out.println("Bounced " + clazz.getName());
 		}
 		
 		// Nothing else; assume nested complex class

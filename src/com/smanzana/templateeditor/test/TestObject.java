@@ -42,8 +42,9 @@ public class TestObject {
 		}
 
 		@Override
-		public void fillFromField(EditorField<?> field) {
+		public NestObject fillFromField(EditorField<?> field) {
 			this.temperature = (Integer) field.getObject();
+			return this;
 		}
 	}
 	
