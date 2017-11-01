@@ -52,6 +52,7 @@ public final class CustomFieldData extends FieldData {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void fillFromField(EditorField<?> field) {
+		System.out.println("Fill from field receieved in CFD (good!)");
 		if (isList) {
 			dataList.clear();
 			List<CustomFieldData> retlist = ((GenericListField<CustomFieldData>) field).getObject();
@@ -59,7 +60,7 @@ public final class CustomFieldData extends FieldData {
 				dataList.add(d.dataLink);
 			}
 		} else
-			dataLink.fillFromField(field);
+			dataLink = dataLink.fillFromField(field);
 	}
 	
 	public ICustomData getData() {

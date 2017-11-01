@@ -91,8 +91,14 @@ public class PopupFormField<T> extends AEditorField<T> {
 			}
 		});
 		
+		String name = formatter.getDisplayName(nestedField);
+		String desc = formatter.getDisplayDescription(nestedField);
+		
+		display.setText(name != null ? name : NAME_MISSING);
+		display.setToolTipText(desc != null ? desc : DESC_MISSING);
 		
 		wrapper.add(comp);
+		
 		//wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		//wrapper.add(Box.createHorizontalGlue());
 		

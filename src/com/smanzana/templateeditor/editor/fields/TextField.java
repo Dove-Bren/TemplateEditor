@@ -1,15 +1,15 @@
 package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
-public class TextField extends AEditorField<String> implements ActionListener {
+public class TextField extends AEditorField<String> implements DocumentListener {
 	private JTextField textfield;
 	private JPanel wrapper;
 	
@@ -25,7 +25,7 @@ public class TextField extends AEditorField<String> implements ActionListener {
 		this.textfield = new JTextField(startingText, 20);
 		Dimension cur = this.textfield.getPreferredSize();
 		this.textfield.setMaximumSize(new Dimension(Short.MAX_VALUE, cur.height));
-		textfield.addActionListener(this);
+		textfield.getDocument().addDocumentListener(this);
 		wrapper.add(textfield);
 		wrapper.add(Box.createHorizontalGlue());
 
@@ -37,11 +37,6 @@ public class TextField extends AEditorField<String> implements ActionListener {
 	}
 
 	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		dirty();
-	}
-
-	@Override
 	public String getObject() {
 		return textfield.getText();
 	}
@@ -49,5 +44,22 @@ public class TextField extends AEditorField<String> implements ActionListener {
 	@Override
 	protected void setCurrentObject(String obj) {
 		textfield.setText(obj);
+	}
+
+	@Override
+	public void changedUpdate(DocumentEvent arg0) {
+		dirty();
+	}
+
+	@Override
+	public void insertUpdate(DocumentEvent arg0) {
+		dirty();
+		
+	}
+
+	@Override
+	public void removeUpdate(DocumentEvent arg0) {
+		dirty();
+		
 	}
 }

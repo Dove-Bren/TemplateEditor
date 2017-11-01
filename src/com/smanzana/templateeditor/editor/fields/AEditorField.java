@@ -30,6 +30,10 @@ public abstract class AEditorField<T> implements EditorField<T> {
 		this.owner = owner;
 	}
 	
+	protected IEditorOwner getOwner() {
+		return this.owner;
+	}
+	
 	/**
 	 * Notify current owner that data has changed.
 	 */

@@ -20,6 +20,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import com.smanzana.templateeditor.IEditorOwner;
 import com.smanzana.templateeditor.api.FieldData;
 import com.smanzana.templateeditor.uiutils.ColoredLineBorder;
 import com.smanzana.templateeditor.uiutils.UIColor;
@@ -185,6 +186,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		Dimension pref = item.getPreferredSize();
 		item.setMaximumSize(new Dimension(Short.MAX_VALUE, pref.height));
 		item.setMinimumSize(new Dimension(20, pref.height));
+		field.setOwner(this.getOwner());
 		fieldMap.put(field, val);
 		listMap.put(item, field);
 		dataList.add(item);
@@ -262,4 +264,11 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		}
 	}
 	
+	@Override
+	public void setOwner(IEditorOwner owner) {
+		super.setOwner(owner);
+		for (EditorField<?> field : fieldMap.keySet()) {
+			field.setOwner(owner);
+		}
+	}
 }

@@ -1,8 +1,6 @@
 package com.smanzana.templateeditor.editor.fields;
 
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 
 import javax.swing.Box;
@@ -10,8 +8,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
-public class IntField extends AEditorField<Integer> implements ActionListener {
+public class IntField extends AEditorField<Integer> implements DocumentListener {
 	
 	private JPanel wrapper;
 	private JFormattedTextField textfield;
@@ -30,7 +30,7 @@ public class IntField extends AEditorField<Integer> implements ActionListener {
 		this.textfield.setHorizontalAlignment(JTextField.TRAILING);
 		Dimension cur = this.textfield.getPreferredSize();
 		this.textfield.setMaximumSize(new Dimension(cur.width, cur.height));
-		textfield.addActionListener(this);
+		textfield.getDocument().addDocumentListener(this);
 		wrapper.add(textfield);
 		wrapper.add(Box.createHorizontalGlue());
 		
@@ -41,11 +41,6 @@ public class IntField extends AEditorField<Integer> implements ActionListener {
 	
 	public JPanel getComponent() {
 		return wrapper;
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		dirty();
 	}
 
 	@Override
@@ -60,5 +55,22 @@ public class IntField extends AEditorField<Integer> implements ActionListener {
 	@Override
 	protected void setCurrentObject(Integer obj) {
 		textfield.setValue(obj);
+	}
+
+	@Override
+	public void changedUpdate(DocumentEvent arg0) {
+		dirty();
+	}
+
+	@Override
+	public void insertUpdate(DocumentEvent arg0) {
+		dirty();
+		
+	}
+
+	@Override
+	public void removeUpdate(DocumentEvent arg0) {
+		dirty();
+		
 	}
 }
