@@ -13,16 +13,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.border.Border;
 
 import com.smanzana.templateeditor.api.FieldData;
+import com.smanzana.templateeditor.uiutils.ColoredLineBorder;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
 /**
@@ -36,13 +35,14 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	private class ListItem extends JPanel implements MouseListener {
 		
 		private static final long serialVersionUID = -8288867064033323901L;
-		private Border border;
+		private ColoredLineBorder border;
 		private boolean selected;
 		
 		public ListItem(LayoutManager manager) {
 			super(manager);
 			this.addMouseListener(this);
-			border = BorderFactory.createLineBorder(Color.BLACK);
+			border = new ColoredLineBorder(Color.BLACK);
+			UIColor.setColor(border, UIColor.Key.EDITOR_MAIN_FOREGROUND);
 		}
 
 		@Override
@@ -116,10 +116,12 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		wrapper.add(Box.createRigidArea(new Dimension(20, 0)));
 		
 		panel = new JPanel();
+		UIColor.setColors(panel, UIColor.Key.EDITOR_MAIN_FOREGROUND, UIColor.Key.EDITOR_MAIN_BACKGROUND);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.add(Box.createVerticalGlue());
 		panel.add(Box.createRigidArea(new Dimension(0, 10)));
 		JButton button = new JButton("New");
+		button.setAlignmentX(.5f);
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -129,6 +131,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		panel.add(button);
 		panel.add(Box.createRigidArea(new Dimension(0, 10)));
 		button = new JButton("Duplicate");
+		button.setAlignmentX(.5f);
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -138,6 +141,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 		panel.add(button);
 		panel.add(Box.createRigidArea(new Dimension(0, 10)));
 		button = new JButton("Delete");
+		button.setAlignmentX(.5f);
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {

@@ -9,6 +9,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 public class IntField extends AEditorField<Integer> implements ActionListener {
 	
@@ -25,6 +26,10 @@ public class IntField extends AEditorField<Integer> implements ActionListener {
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
 		
 		this.textfield = new JFormattedTextField(NumberFormat.getIntegerInstance());
+		this.textfield.setColumns(4);
+		this.textfield.setHorizontalAlignment(JTextField.TRAILING);
+		Dimension cur = this.textfield.getPreferredSize();
+		this.textfield.setMaximumSize(new Dimension(cur.width, cur.height));
 		textfield.addActionListener(this);
 		wrapper.add(textfield);
 		wrapper.add(Box.createHorizontalGlue());

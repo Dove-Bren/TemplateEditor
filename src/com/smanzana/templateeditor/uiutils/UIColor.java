@@ -338,6 +338,11 @@ public class UIColor {
 				fc.showSaveDialog(null);
 				
 				File sel = fc.getSelectedFile();
+				
+				if (!fc.getFileFilter().accept(sel)) {
+					sel = new File(sel.getAbsolutePath(), ".sch");
+				}
+				
 				if (sel != null) {
 					try {
 						saveToFile(sel);

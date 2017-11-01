@@ -23,6 +23,8 @@ public class TextField extends AEditorField<String> implements ActionListener {
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
 		
 		this.textfield = new JTextField(startingText, 20);
+		Dimension cur = this.textfield.getPreferredSize();
+		this.textfield.setMaximumSize(new Dimension(Short.MAX_VALUE, cur.height));
 		textfield.addActionListener(this);
 		wrapper.add(textfield);
 		wrapper.add(Box.createHorizontalGlue());
