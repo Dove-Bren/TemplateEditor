@@ -10,4 +10,5 @@ import java.lang.annotation.Target;
 public @interface DataLoaderData {
 	String name() default "";
 	String description() default "";
+	boolean expand() default false;
 }

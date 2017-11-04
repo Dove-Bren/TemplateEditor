@@ -47,14 +47,18 @@ public class ObjectDataLoader<T> {
 		public String desc;
 		public int key;
 		public IFactory<?> factory;
+		public Field parentField; // Flat-embedded field's parent field
 		
-		public FieldWrapper(Field field, int key, Object template, IFactory<?> factory, String name, String desc) {
+		public FieldWrapper(Field field, int key, Object template,
+				IFactory<?> factory, String name, String desc,
+				Field parentField) {
 			this.field = field;
 			this.template = template;
 			this.name = name;
 			this.desc = desc;
 			this.key = key;
 			this.factory = factory;
+			this.parentField = parentField;
 		}
 	}
 	
@@ -171,7 +175,13 @@ public class ObjectDataLoader<T> {
 			f.setAccessible(true);
 			Object val = null;
 			try {
-				val = f.get(templateObject);
+				if (wrapper.parentField != null) {
+					wrapper.parentField.setAccessible(true);
+					Object par = wrapper.parentField.get(templateObject);
+					val = f.get(par);
+				} else {
+					val = f.get(templateObject);
+				}
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
 				System.out.println("Failed parsing field " + f.getName() + " on object type " + templateObject.getClass()
@@ -203,6 +213,10 @@ public class ObjectDataLoader<T> {
 	}
 	
 	private void collectFields(List<FieldWrapper> list, Class<?> clazz, Object o) {
+		collectFields(list, clazz, o, null);
+	}
+	
+	private void collectFields(List<FieldWrapper> list, Class<?> clazz, Object o, Field parent){
 		
 		if (clazz == Object.class
 				|| clazz.isPrimitive())
@@ -304,13 +318,10 @@ public class ObjectDataLoader<T> {
 							try {
 								return factoryMethod.invoke(o, (Object[]) null);
 							} catch (IllegalAccessException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (InvocationTargetException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 							return null;
@@ -351,13 +362,10 @@ public class ObjectDataLoader<T> {
 								try {
 									return factoryMethod.invoke(null, (Object[]) null);
 								} catch (IllegalAccessException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (IllegalArgumentException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (InvocationTargetException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}
 								return null;
@@ -394,13 +402,10 @@ public class ObjectDataLoader<T> {
 								try {
 									return factoryMethod.invoke(null, (Object[]) null);
 								} catch (IllegalAccessException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (IllegalArgumentException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (InvocationTargetException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}
 								return null;
@@ -427,16 +432,12 @@ public class ObjectDataLoader<T> {
 							try {
 								return cons.newInstance((Object[]) null);
 							} catch (InstantiationException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (IllegalAccessException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (InvocationTargetException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 							return null;
@@ -448,6 +449,23 @@ public class ObjectDataLoader<T> {
 					System.err.println("Unable to resolve factory for complex list type " + templateClass.getName()
 					 + " (Field: " + reference.getName() + " | class " + clazz.getName());
 				}
+			}
+			
+			if (aData != null && aData.expand()) {
+				// Don't do regular stuff;
+				// extract from nested type and then continue
+				Class<?> expandType = f.getType();
+				try {
+					System.out.println("Field " + f.getName() + " type " + f.getType());
+					f.setAccessible(true);
+					collectFields(list, expandType, f.get(o), f);
+				} catch (Exception e) {
+					System.err.println("Encountered error fetching element for recursion: " + f.getName());
+					e.printStackTrace();
+					continue;
+				}
+				
+				continue;
 			}
 			
 			int key = nextKey();
@@ -468,7 +486,8 @@ public class ObjectDataLoader<T> {
 			if (descKey == -1)
 				descKey = key;
 			
-			buffer.put(f.getName(), new FieldWrapper(f, key, template, factory, name, desc));
+			buffer.put(f.getName(),
+					new FieldWrapper(f, key, template, factory, name, desc, parent));
 			
 		}
 		
@@ -721,32 +740,42 @@ public class ObjectDataLoader<T> {
 			
 			// TODO user added registration to counter dissolve here
 			
-			try {
-				if (data.data instanceof SimpleFieldData) {
-					wrapper.field.set(obj, ((SimpleFieldData)data.data).getValue());
-				} else if (data.data instanceof EnumFieldData<?>) {
-					wrapper.field.set(obj, ((EnumFieldData<?>) data.data).getSelection());
-				} else if (data.data instanceof ComplexFieldData) {
-					// We MUST have a loader, then
-					if (data.loader == null) {
-						System.err.println("Found complex data with no associated loader: " + wrapper.field.getName());
-						continue;
-					}
-					ComplexFieldData cfd = (ComplexFieldData) data.data;
-					if (data.isList) {
-						data.loader.listTemplates = cfd.getListData();
-						wrapper.field.set(obj, data.loader.fetchEdittedList((ComplexFieldData) data.data));
-					} else {
-						wrapper.field.set(obj, data.loader.fetchEdittedValue());
-					}
-				} else if (data.data instanceof CustomFieldData) {
-					CustomFieldData cfd = (CustomFieldData) data.data;
-					if (cfd.isList()) {
-						wrapper.field.set(obj, cfd.getDataList());
-					} else
-						wrapper.field.set(obj, cfd.getData());
+			Object val = null;
+			
+			if (data.data instanceof SimpleFieldData) {
+				val = ((SimpleFieldData)data.data).getValue();
+			} else if (data.data instanceof EnumFieldData<?>) {
+				val = ((EnumFieldData<?>) data.data).getSelection();
+			} else if (data.data instanceof ComplexFieldData) {
+				// We MUST have a loader, then
+				if (data.loader == null) {
+					System.err.println("Found complex data with no associated loader: " + wrapper.field.getName());
+					continue;
+				}
+				ComplexFieldData cfd = (ComplexFieldData) data.data;
+				if (data.isList) {
+					data.loader.listTemplates = cfd.getListData();
+					val = data.loader.fetchEdittedList((ComplexFieldData) data.data);
 				} else {
-					System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
+					val = data.loader.fetchEdittedValue();
+				}
+			} else if (data.data instanceof CustomFieldData) {
+				CustomFieldData cfd = (CustomFieldData) data.data;
+				if (cfd.isList()) {
+					val = cfd.getDataList();
+				} else
+					val = cfd.getData();
+			} else {
+				System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
+			}
+			
+			try {
+				if (wrapper.parentField != null) {
+					// Not actually on obj but nested
+					Object actual = wrapper.parentField.get(obj);
+					wrapper.field.set(actual, val);
+				} else {
+					wrapper.field.set(obj, val);
 				}
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
