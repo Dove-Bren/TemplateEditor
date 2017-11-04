@@ -167,7 +167,7 @@ public class GenericListField<T extends FieldData> extends AEditorField<List<T>>
 	
 	// Signal one of the nested elements has changed, and we should do our part of updating
 	private void update() {
-		dirty();
+		markDirty();
 	}
 	
 	@SuppressWarnings("unchecked")

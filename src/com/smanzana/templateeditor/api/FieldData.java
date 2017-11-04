@@ -4,12 +4,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.ListCellRenderer;
+
 import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
+import com.smanzana.templateeditor.data.SubclassFieldData;
 import com.smanzana.templateeditor.data.SubsetFieldData;
+import com.smanzana.templateeditor.editor.fields.ChildEditorField;
 import com.smanzana.templateeditor.editor.fields.EditorField;
 import com.smanzana.templateeditor.editor.fields.GrabListField;
 
@@ -101,6 +105,42 @@ public abstract class FieldData implements Cloneable {
 	
 	public static CustomFieldData customList(ICustomData base, List<ICustomData> activeList) {
 		return new CustomFieldData(base, activeList);
+	}
+	
+	public static <T, O> SubclassFieldData<T, O> subclass(
+			List<T> list, Map<T, Map<Integer, FieldData>> maps,
+			ChildEditorField.GenericFactory<T, O> factory
+			) {
+		return subclass(list, maps, factory, null, null, null);
+	}
+	
+	public static <T, O> SubclassFieldData<T, O> subclass(
+			List<T> list, Map<T, Map<Integer, FieldData>> maps,
+			ChildEditorField.GenericFactory<T, O> factory,
+			ChildEditorField.TypeResolver<T, O> resolver
+			) {
+		return subclass(list, maps, factory, resolver, null, null);
+	}
+	
+	public static <T, O> SubclassFieldData<T, O> subclass(
+			List<T> list, Map<T, Map<Integer, FieldData>> maps,
+			ChildEditorField.GenericFactory<T, O> factory,
+			ChildEditorField.TypeResolver<T, O> resolver,
+			O current
+			) {
+		return subclass(list, maps, factory, resolver, current, null);
+	}
+	
+	public static <T, O> SubclassFieldData<T, O> subclass(
+			List<T> list, Map<T, Map<Integer, FieldData>> maps,
+			ChildEditorField.GenericFactory<T, O> factory,
+			ChildEditorField.TypeResolver<T, O> resolver,
+			O current,
+			ListCellRenderer<T> customRenderer
+			) {
+		return new SubclassFieldData<T, O>(
+				list, maps, factory, resolver, customRenderer, current
+				);
 	}
 	
 	public FieldData description(String description) {

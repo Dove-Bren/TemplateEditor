@@ -37,7 +37,7 @@ public abstract class AEditorField<T> implements EditorField<T> {
 	/**
 	 * Notify current owner that data has changed.
 	 */
-	protected void dirty() {
+	protected void markDirty() {
 		if (owner != null)
 			owner.dirty();
 	}

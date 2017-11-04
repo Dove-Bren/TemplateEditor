@@ -1,5 +1,6 @@
 package com.smanzana.templateeditor.api;
 
+import java.awt.Component;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -7,11 +8,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
 
 import com.smanzana.templateeditor.api.annotations.DataLoaderData;
 import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
@@ -22,7 +28,11 @@ import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
+import com.smanzana.templateeditor.data.SubclassFieldData;
+import com.smanzana.templateeditor.editor.fields.ChildEditorField.GenericFactory;
+import com.smanzana.templateeditor.editor.fields.ChildEditorField.TypeResolver;
 import com.smanzana.templateeditor.uiutils.TextUtil;
+import com.smanzana.templateeditor.uiutils.UIColor;
 
 /**
  * Takes in a generic java object and breaks it down into a mapping of
@@ -167,30 +177,45 @@ public class ObjectDataLoader<T> {
 	
 	// Parse templateObject and create mapping
 	private void dissolve() throws SecurityException {
+		dissolve(templateObject, true);
+	}
+	
+	private void dissolve(Object obj, boolean refreshFields) {
 		// Scan for annotations
-		List<FieldWrapper> fields = new LinkedList<>();
-		collectFields(fields, templateObject.getClass(), templateObject);
+		Collection<FieldWrapper> fields;
+		if (refreshFields) {
+			fields = new LinkedList<>();
+			collectFields(fields, obj.getClass(), obj);
+			// OTHER
+			for (FieldWrapper wrapper : fields) {
+				wrapper.field.setAccessible(true);
+				fieldMap.put(wrapper.key, wrapper);
+			}
+		} else {
+			fields = fieldMap.values();
+		}
+		
 		for (FieldWrapper wrapper : fields) {
 			Field f = wrapper.field;
-			f.setAccessible(true);
+			//f.setAccessible(true);
 			Object val = null;
 			try {
 				if (wrapper.parentField != null) {
 					wrapper.parentField.setAccessible(true);
-					Object par = wrapper.parentField.get(templateObject);
+					Object par = wrapper.parentField.get(obj);
 					val = f.get(par);
 				} else {
-					val = f.get(templateObject);
+					val = f.get(obj);
 				}
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
-				System.out.println("Failed parsing field " + f.getName() + " on object type " + templateObject.getClass()
+				System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
 				+ ": " + e.getMessage());
 				valid = false;
 				return;
 			} catch (IllegalAccessException e) {
 				e.printStackTrace();
-				System.out.println("Failed parsing field " + f.getName() + " on object type " + templateObject.getClass()
+				System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
 				+ ": " + e.getMessage());
 				valid = false;
 				return;
@@ -205,18 +230,17 @@ public class ObjectDataLoader<T> {
 				return;
 			}
 			
-			template.put(key, data);
-			fieldMap.put(key, wrapper);
+			template.put(key, data);			
 		}
 		
 		valid = true; // Didn't error, must be valid
 	}
 	
-	private void collectFields(List<FieldWrapper> list, Class<?> clazz, Object o) {
+	private void collectFields(Collection<FieldWrapper> list, Class<?> clazz, Object o) {
 		collectFields(list, clazz, o, null);
 	}
 	
-	private void collectFields(List<FieldWrapper> list, Class<?> clazz, Object o, Field parent){
+	private void collectFields(Collection<FieldWrapper> list, Class<?> clazz, Object o, Field parent){
 		
 		if (clazz == Object.class
 				|| clazz.isPrimitive())
@@ -246,6 +270,7 @@ public class ObjectDataLoader<T> {
 			String name = null;
 			String desc = null;
 			IFactory<?> factory = null;
+			
 			if (aList != null && aList.templateName() != null) {
 				// Search for field by this name in current class
 				// Also add it to list of ignored fields
@@ -613,6 +638,75 @@ public class ObjectDataLoader<T> {
 			return null;
 		}
 		
+		if (value instanceof ISuperclass) {
+			// Type marked as having a set of subclasses
+			List<ISuperclass> subs = ((ISuperclass) value).getChildTypes();
+			Map<ISuperclass, Map<Integer, FieldData>> dataMaps = new HashMap<>();
+			Map<ISuperclass, ObjectDataLoader<?>> loaders = new HashMap<>();
+			for (ISuperclass o : subs) {
+				ObjectDataLoader<?> loader = new ObjectDataLoader<>(o);
+				Map<Integer, FieldData> dataMap = loader.getFieldMap();
+				dataMaps.put(o, dataMap);
+				loaders.put(o, loader);
+			}
+			
+			SubclassFieldData<?, ?> fieldData = FieldData.subclass(
+					subs, dataMaps,
+					new GenericFactory<ISuperclass, ISuperclass>() {
+						@Override
+						public ISuperclass constructFromData(ISuperclass type, Map<Integer, FieldData> data) {
+							ObjectDataLoader<?> loader = loaders.get(type);
+							for (Integer i : data.keySet())
+								loader.template.get(i).data = data.get(i);
+							return (ISuperclass) loader.fetchEdittedValue();
+						}
+
+						@Override
+						public ISuperclass constructDefault(ISuperclass type) {
+							return type;
+						}
+					},
+					new TypeResolver<ISuperclass, ISuperclass>() {
+						@Override
+						public ISuperclass resolve(ISuperclass obj) {
+							for (ISuperclass o : loaders.keySet()) {
+								if (o.getChildName(o).equals(obj.getChildName(obj)))
+									return o;
+							}
+							return null;
+						}
+
+						@Override
+						public Map<Integer, FieldData> breakdown(ISuperclass obj) {
+							ObjectDataLoader<?> loader = loaders.get(resolve(obj));
+							loader.dissolve(obj, false);
+							return loader.getFieldMap();
+						}
+					},
+					(ISuperclass) value,
+					new ListCellRenderer<ISuperclass>() {
+						private JLabel label;
+						@Override
+						public Component getListCellRendererComponent(JList<? extends ISuperclass> arg0,
+								ISuperclass arg1, int arg2, boolean arg3, boolean arg4) {
+							if (label == null) {
+								label = new JLabel();
+								label.setOpaque(true);
+							}
+							
+							label.setText(TextUtil.pretty(arg1.getChildName(arg1)));
+							
+							if (arg3)
+								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
+							else
+								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND);
+							return label;
+						}
+					}
+					);
+			return DataWrapper.wrap(fieldData);
+		}
+		
 		// Not a list, not a primitive. Looking like complex
 		
 		// TODO nice feature would be registered listeners that could check and see if they're applicable
@@ -765,6 +859,8 @@ public class ObjectDataLoader<T> {
 					val = cfd.getDataList();
 				} else
 					val = cfd.getData();
+			} else if (data.data instanceof SubclassFieldData) {
+				val = ((SubclassFieldData<?, ?>) data.data).getValue();
 			} else {
 				System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
 			}

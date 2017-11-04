@@ -122,7 +122,7 @@ public class PopupFormField<T> extends AEditorField<T> {
 		
 		display.setText(name != null ? name : NAME_MISSING);
 		display.setToolTipText(desc != null ? desc : DESC_MISSING);
-		this.dirty();
+		this.markDirty();
 	}
 	
 	/**

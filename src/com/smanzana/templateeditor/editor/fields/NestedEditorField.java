@@ -121,7 +121,7 @@ public class NestedEditorField extends AEditorField<Map<Integer, FieldData>> {
 		
 		display.setText(name != null ? name : NAME_MISSING);
 		display.setToolTipText(desc != null ? desc : DESC_MISSING);
-		this.dirty();
+		this.markDirty();
 	}
 	
 	/**

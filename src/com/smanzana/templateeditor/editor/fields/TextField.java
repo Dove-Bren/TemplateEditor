@@ -48,18 +48,16 @@ public class TextField extends AEditorField<String> implements DocumentListener 
 
 	@Override
 	public void changedUpdate(DocumentEvent arg0) {
-		dirty();
+		markDirty();
 	}
 
 	@Override
 	public void insertUpdate(DocumentEvent arg0) {
-		dirty();
-		
+		markDirty();
 	}
 
 	@Override
 	public void removeUpdate(DocumentEvent arg0) {
-		dirty();
-		
+		markDirty();
 	}
 }

@@ -246,7 +246,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 	
 	// Signal one of the nested elements has changed, and we should do our part of updating
 	private void update() {
-		dirty();
+		markDirty();
 	}
 	
 	private DataWrapper cloneBase() {

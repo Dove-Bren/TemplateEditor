@@ -544,7 +544,7 @@ public class GrabListField<T> extends AEditorField<List<T>> implements ActionLis
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-			dirty();
+		markDirty();
 	}
 
 	@Override

@@ -69,7 +69,7 @@ public class BoolField extends AEditorField<Boolean> implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-		dirty();
+		markDirty();
 	}
 
 	@Override

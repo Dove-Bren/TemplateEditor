@@ -61,7 +61,7 @@ public class EnumField<T extends Enum<T>> extends AEditorField<T> implements Act
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-		dirty();
+		markDirty();
 	}
 	
 	private T lookup(String pretty) {
