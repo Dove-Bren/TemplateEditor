@@ -11,4 +11,5 @@ public @interface DataLoaderData {
 	String name() default "";
 	String description() default "";
 	boolean expand() default false;
+	String verifier() default "";
 }

@@ -9,11 +9,14 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -27,6 +30,7 @@ import com.smanzana.templateeditor.api.annotations.DataLoaderName;
 import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
+import com.smanzana.templateeditor.data.MapFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SubclassFieldData;
 import com.smanzana.templateeditor.editor.fields.ChildEditorField.GenericFactory;
@@ -222,7 +226,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			int key = wrapper.key;
-			DataWrapper data = wrapField(f, val, wrapper.template, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
+			DataWrapper data = wrapField(f, f.getType(), val, wrapper.template, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -243,7 +247,7 @@ public class ObjectDataLoader<T> {
 	private void collectFields(Collection<FieldWrapper> list, Class<?> clazz, Object o, Field parent){
 		
 		if (clazz == Object.class
-				|| clazz.isPrimitive())
+				|| isPrimitiveType(clazz))
 			return;
 		
 		Map<String, FieldWrapper> buffer = new HashMap<>();
@@ -546,7 +550,7 @@ public class ObjectDataLoader<T> {
 				// Type-safe cause of generics; we know these fields exist in list objects
 				Field field = row.getValue().field;
 				try {
-					rowMap.put(row.getKey(), wrapField(field, field.get(item), row.getValue().template, row.getValue().factory,
+					rowMap.put(row.getKey(), wrapField(field, field.getType(), field.get(item), row.getValue().template, row.getValue().factory,
 							pullName(row.getValue()), pullDesc(row.getValue())).data);
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
@@ -576,9 +580,9 @@ public class ObjectDataLoader<T> {
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private <U> DataWrapper wrapField(Field f, Object value, Object listTemplate, IFactory<?> factory, String name, String description) {
-		Class<?> clazz = f.getType();
-		if (clazz.isPrimitive()) {
+	private <U> DataWrapper wrapField(Field f, Class<?> clazz, Object value, Object listTemplate, IFactory<?> factory, String name, String description) {
+		//Class<?> clazz = f.getType();
+		if (isPrimitiveType(clazz)) {
 			
 			if (clazz.equals(Integer.class) || clazz.equals(int.class))
 				return DataWrapper.wrap(FieldData.simple((Integer) value).name(name).desc(description));
@@ -596,6 +600,13 @@ public class ObjectDataLoader<T> {
 		
 		if (clazz.isAssignableFrom(List.class)) {
 			// It's a list
+			if (f == null) {
+				// Nested list in something like a map. DO NOT SUPPORT
+				System.out.println("Found list nested under a complex field "
+						+ (name == null ? "" : "(" + name + ")")
+						+ ". This is not supported.");
+				return null;
+			}
 			Class<?> subclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[0];
 			
 			if (subclazz.equals(String.class))
@@ -605,7 +616,7 @@ public class ObjectDataLoader<T> {
 			if (subclazz.equals(Double.class))
 				return DataWrapper.wrap(FieldData.listDouble((List<Double>) value).name(name).desc(description));
 			
-			if (subclazz.isPrimitive()) {
+			if (isPrimitiveType(subclazz)) {
 				System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
 				System.err.println("This primitive type isn't supported :(");
 				return null;
@@ -636,6 +647,41 @@ public class ObjectDataLoader<T> {
 			System.err.println("Unsupported list nested type: " + subclazz + " from " + clazz);
 			System.err.println("Mark complex lists with @DataLoaderList and point to a template base class");
 			return null;
+		}
+		
+		if (clazz.isAssignableFrom(Map.class)) {
+			
+			if (f == null) {
+				// Nested map in something like a map. DO NOT SUPPORT
+				System.out.println("Found map nested under a complex field "
+						+ (name == null ? "" : "(" + name + ")")
+						+ ". This is not supported.");
+				return null;
+			}
+			
+			Class<?> keyclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[0];
+			Class<?> valueclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[1];
+			Map<Object, FieldData> dataMap;
+			Map<?, ?> map = (Map<?, ?>) value;
+			// Mimic the map type of value
+			if (map instanceof EnumMap) {
+				dataMap = (Map<Object, FieldData>) newEnumMap((Class<? extends Enum>)keyclazz);
+			} else if (map instanceof TreeMap) {
+				dataMap = new TreeMap<>();
+			} else if (map instanceof LinkedHashMap) {
+				dataMap = new LinkedHashMap<>();
+			} else {
+				dataMap = new HashMap<>();
+			}
+			
+			for (Entry<?, ?> row : map.entrySet()) {
+				DataWrapper subwrapper = wrapField(null, valueclazz, row.getValue(), null, null, null, null);
+				// really only care about the FieldData we get with the wrapper
+				dataMap.put(row.getKey(), subwrapper.data);
+			}
+			
+			return DataWrapper.wrap(FieldData.map(dataMap)
+					.name(name).desc(description));
 		}
 		
 		if (value instanceof ISuperclass) {
@@ -740,6 +786,10 @@ public class ObjectDataLoader<T> {
 		return ret;
 	}
 	
+	private <K extends Enum<K>, V> EnumMap<K, V> newEnumMap(Class<K> clazz) {
+		return new EnumMap<K, V>(clazz);
+	}
+	
 	public Map<Integer, FieldData> getFieldMap() {
 		if (!valid)
 			return null;
@@ -826,6 +876,49 @@ public class ObjectDataLoader<T> {
 		return templateObject;
 	}
 	
+	private Object fetchValue(DataWrapper data) {
+		Object val = null;
+		
+		if (data.data instanceof SimpleFieldData) {
+			val = ((SimpleFieldData)data.data).getValue();
+		} else if (data.data instanceof EnumFieldData<?>) {
+			val = ((EnumFieldData<?>) data.data).getSelection();
+		} else if (data.data instanceof ComplexFieldData) {
+			// We MUST have a loader, then
+			if (data.loader == null) {
+				System.err.println("Found complex data with no associated loader!");
+				(new Exception()).printStackTrace();
+				val = null;
+			}
+			ComplexFieldData cfd = (ComplexFieldData) data.data;
+			if (data.isList) {
+				data.loader.listTemplates = cfd.getListData();
+				val = data.loader.fetchEdittedList((ComplexFieldData) data.data);
+			} else {
+				val = data.loader.fetchEdittedValue();
+			}
+		} else if (data.data instanceof CustomFieldData) {
+			CustomFieldData cfd = (CustomFieldData) data.data;
+			if (cfd.isList()) {
+				val = cfd.getDataList();
+			} else
+				val = cfd.getData();
+		} else if (data.data instanceof SubclassFieldData) {
+			val = ((SubclassFieldData<?, ?>) data.data).getValue();
+		} else if (data.data instanceof MapFieldData) {
+			Map<Object, Object> map = new HashMap<>();
+			Map<?, ?> retMap = ((MapFieldData<?>) data.data).getMapping();
+			for (Object k : retMap.keySet()) {
+				map.put(k, fetchValue(DataWrapper.wrap((FieldData) retMap.get(k))));
+			}
+			val = map;
+		} else {
+			System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
+		}
+		
+		return val;
+	}
+	
 	private void formSingleElement(T obj, Map<Integer, DataWrapper> dataMap) {
 		// Use fields from fieldMap
 		for (Integer key : dataMap.keySet()) {
@@ -834,36 +927,9 @@ public class ObjectDataLoader<T> {
 			
 			// TODO user added registration to counter dissolve here
 			
-			Object val = null;
-			
-			if (data.data instanceof SimpleFieldData) {
-				val = ((SimpleFieldData)data.data).getValue();
-			} else if (data.data instanceof EnumFieldData<?>) {
-				val = ((EnumFieldData<?>) data.data).getSelection();
-			} else if (data.data instanceof ComplexFieldData) {
-				// We MUST have a loader, then
-				if (data.loader == null) {
-					System.err.println("Found complex data with no associated loader: " + wrapper.field.getName());
-					continue;
-				}
-				ComplexFieldData cfd = (ComplexFieldData) data.data;
-				if (data.isList) {
-					data.loader.listTemplates = cfd.getListData();
-					val = data.loader.fetchEdittedList((ComplexFieldData) data.data);
-				} else {
-					val = data.loader.fetchEdittedValue();
-				}
-			} else if (data.data instanceof CustomFieldData) {
-				CustomFieldData cfd = (CustomFieldData) data.data;
-				if (cfd.isList()) {
-					val = cfd.getDataList();
-				} else
-					val = cfd.getData();
-			} else if (data.data instanceof SubclassFieldData) {
-				val = ((SubclassFieldData<?, ?>) data.data).getValue();
-			} else {
-				System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
-			}
+			Object val = fetchValue(data);
+			if (val == null)
+				continue;
 			
 			try {
 				if (wrapper.parentField != null) {
@@ -918,6 +984,14 @@ public class ObjectDataLoader<T> {
 		}
 		
 		return output;
+	}
+	
+	public static final boolean isPrimitiveType(Class<?> clazz) {
+		if (clazz.isPrimitive())
+			return true;
+		return (clazz.equals(Integer.class)
+			|| clazz.equals(Boolean.class)
+			|| clazz.equals(Double.class));
 	}
 	
 }
