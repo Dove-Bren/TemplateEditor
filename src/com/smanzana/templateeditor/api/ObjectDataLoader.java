@@ -27,10 +27,12 @@ import com.smanzana.templateeditor.api.annotations.DataLoaderDescription;
 import com.smanzana.templateeditor.api.annotations.DataLoaderFactory;
 import com.smanzana.templateeditor.api.annotations.DataLoaderList;
 import com.smanzana.templateeditor.api.annotations.DataLoaderName;
+import com.smanzana.templateeditor.api.annotations.DataLoaderRuntimeEnum;
 import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.MapFieldData;
+import com.smanzana.templateeditor.data.ReferenceFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SubclassFieldData;
 import com.smanzana.templateeditor.editor.fields.ChildEditorField.GenericFactory;
@@ -200,14 +202,15 @@ public class ObjectDataLoader<T> {
 		}
 		
 		for (FieldWrapper wrapper : fields) {
+			Object parent = obj;
 			Field f = wrapper.field;
 			//f.setAccessible(true);
 			Object val = null;
 			try {
 				if (wrapper.parentField != null) {
 					wrapper.parentField.setAccessible(true);
-					Object par = wrapper.parentField.get(obj);
-					val = f.get(par);
+					parent = wrapper.parentField.get(obj);
+					val = f.get(parent);
 				} else {
 					val = f.get(obj);
 				}
@@ -226,7 +229,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			int key = wrapper.key;
-			DataWrapper data = wrapField(f, f.getType(), val, wrapper.template, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
+			DataWrapper data = wrapField(f, f.getType(), val, wrapper.template, parent, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
 			if (data == null) {
 				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
 				System.err.println("Aborting");
@@ -263,7 +266,8 @@ public class ObjectDataLoader<T> {
 			DataLoaderName aName = f.getAnnotation(DataLoaderName.class);
 			DataLoaderDescription aDesc = f.getAnnotation(DataLoaderDescription.class);
 			DataLoaderData aData = f.getAnnotation(DataLoaderData.class);
-			if (aData == null && aList == null && aName == null && aDesc == null)
+			DataLoaderRuntimeEnum aEnum = f.getAnnotation(DataLoaderRuntimeEnum.class);
+			if (aData == null && aList == null && aName == null && aDesc == null && aEnum == null)
 				continue;
 			
 			if (removedNames.contains(f.getName()))
@@ -550,7 +554,7 @@ public class ObjectDataLoader<T> {
 				// Type-safe cause of generics; we know these fields exist in list objects
 				Field field = row.getValue().field;
 				try {
-					rowMap.put(row.getKey(), wrapField(field, field.getType(), field.get(item), row.getValue().template, row.getValue().factory,
+					rowMap.put(row.getKey(), wrapField(field, field.getType(), field.get(item), row.getValue().template, item, row.getValue().factory,
 							pullName(row.getValue()), pullDesc(row.getValue())).data);
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
@@ -580,8 +584,43 @@ public class ObjectDataLoader<T> {
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private <U> DataWrapper wrapField(Field f, Class<?> clazz, Object value, Object listTemplate, IFactory<?> factory, String name, String description) {
+	private <U> DataWrapper wrapField(Field f, Class<?> clazz, Object value, Object listTemplate, Object parent, IFactory<?> factory, String name, String description) {
 		//Class<?> clazz = f.getType();
+		
+		// First! runtime enumerable? :P
+		if (f != null)
+		{
+			DataLoaderRuntimeEnum aEnum = f.getAnnotation(DataLoaderRuntimeEnum.class);
+			if (aEnum != null) {
+				// All values known. Use a reference field
+				Map<String, Object> values;
+				if (aEnum.value() != null && !aEnum.value().trim().isEmpty()) {
+					try {
+						Method enumerator = parent.getClass().getDeclaredMethod(aEnum.value(), String.class);
+						values = (Map<String, Object>) enumerator.invoke(parent);
+					} catch (Exception e) {
+						values = null;
+						e.printStackTrace();
+						System.err.println("Unable to find declare enumeration method: " + aEnum.value());
+					}
+				} else if (IRuntimeEnumerable.class.isAssignableFrom(parent.getClass())) {
+					values = ((IRuntimeEnumerable) parent).fetchValidValues(
+							aEnum.value());
+				} else {
+					values = null;
+					System.err.println("Field marked as runtime-enumeration but "
+							+ "no value-fetching method supplied!");
+				}
+				
+				if (values != null) {
+					return DataWrapper.wrap(
+						FieldData.reference(values, value)
+						.name(name).desc(description)
+					);
+				}
+			}
+		}
+		
 		if (isPrimitiveType(clazz)) {
 			
 			if (clazz.equals(Integer.class) || clazz.equals(int.class))
@@ -594,7 +633,7 @@ public class ObjectDataLoader<T> {
 			return null;
 		}
 		if (clazz.equals(String.class))
-			return DataWrapper.wrap(FieldData.simple((String) value).name(name).desc(description));
+			return DataWrapper.wrap(FieldData.simple((String) (value == null ? "" : value)).name(name).desc(description));
 		if (clazz.isEnum())
 			return DataWrapper.wrap(FieldData.enumSelection((Enum) value).name(name).desc(description));
 		
@@ -675,7 +714,7 @@ public class ObjectDataLoader<T> {
 			}
 			
 			for (Entry<?, ?> row : map.entrySet()) {
-				DataWrapper subwrapper = wrapField(null, valueclazz, row.getValue(), null, null, null, null);
+				DataWrapper subwrapper = wrapField(null, valueclazz, row.getValue(), null, null, null, null, null);
 				// really only care about the FieldData we get with the wrapper
 				dataMap.put(row.getKey(), subwrapper.data);
 			}
@@ -762,7 +801,6 @@ public class ObjectDataLoader<T> {
 		if (ICustomData.class.isAssignableFrom(clazz)) {
 			ICustomData custom = (ICustomData) value;
 			return DataWrapper.wrap(FieldData.custom(custom).name(name).desc(description));
-		} else {
 		}
 		
 		// Nothing else; assume nested complex class
@@ -912,8 +950,10 @@ public class ObjectDataLoader<T> {
 				map.put(k, fetchValue(DataWrapper.wrap((FieldData) retMap.get(k))));
 			}
 			val = map;
+		} else if (data.data instanceof ReferenceFieldData) {
+			val = ((ReferenceFieldData<?>) data.data).getSelection();
 		} else {
-			System.err.println("Missing case handler in ObjectDataLoader (formSingleElement");
+			System.err.println("Missing case handler in ObjectDataLoader (formSingleElement X fetchValue");
 		}
 		
 		return val;

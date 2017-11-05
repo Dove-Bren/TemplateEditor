@@ -10,6 +10,7 @@ import com.smanzana.templateeditor.data.ComplexFieldData;
 import com.smanzana.templateeditor.data.CustomFieldData;
 import com.smanzana.templateeditor.data.EnumFieldData;
 import com.smanzana.templateeditor.data.MapFieldData;
+import com.smanzana.templateeditor.data.ReferenceFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData.FieldType;
 import com.smanzana.templateeditor.data.SubclassFieldData;
@@ -146,6 +147,10 @@ public abstract class FieldData implements Cloneable {
 	
 	public static <K> MapFieldData<K> map(Map<K,FieldData> map) {
 		return new MapFieldData<K>(map);
+	}
+	
+	public static <T> ReferenceFieldData<T> reference(Map<String, T> map, T current) {
+		return new ReferenceFieldData<T>(map, current);
 	}
 	
 	public FieldData description(String description) {
