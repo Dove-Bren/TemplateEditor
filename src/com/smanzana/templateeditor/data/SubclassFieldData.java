@@ -103,4 +103,9 @@ public final class SubclassFieldData<T, O> extends FieldData {
 	public O getValue() {
 		return lastObject;
 	}
+	
+	// Don't do it.
+	public void setValue(O obj) {
+		this.lastObject = obj;
+	}
 }

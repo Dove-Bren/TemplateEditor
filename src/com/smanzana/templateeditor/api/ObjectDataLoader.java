@@ -637,7 +637,10 @@ public class ObjectDataLoader<T> {
 			
 			Map<Integer, FieldData> rowMap = new HashMap<>();
 			if (fieldMap.isEmpty()) {
-				rowMap.put(0, template.get(0).data.clone());
+				@SuppressWarnings("unchecked")
+				SubclassFieldData<?,T> d = (SubclassFieldData<?,T>) template.get(0).data.clone();
+				d.setValue(item);
+				rowMap.put(0, d);
 			} else
 			for (Entry<Integer, FieldWrapper> row : fieldMap.entrySet()) {
 				// Type-safe cause of generics; we know these fields exist in list objects

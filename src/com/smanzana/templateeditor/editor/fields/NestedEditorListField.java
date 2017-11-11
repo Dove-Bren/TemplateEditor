@@ -157,6 +157,7 @@ public class NestedEditorListField extends AEditorField<List<Map<Integer, FieldD
 		//wrapper.add(Box.createRigidArea(new Dimension(label.getPreferredSize().width, 0)));
 		wrapper.add(Box.createRigidArea(new Dimension(10, 0)));
 		//wrapper.add(Box.createHorizontalGlue());
+		setObject(fields);
 		
 		wrapper.validate();
 	}
