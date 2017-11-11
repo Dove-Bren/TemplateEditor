@@ -100,6 +100,7 @@ public class ObjectDataLoader<T> {
 	private int formattingDescIndex; // what index (in template) to us for description. -1 means none.
 	private Map<Integer, FieldWrapper> fieldMap;
 	private Map<Integer, DataWrapper> template;
+	private boolean passthrough; // no actual fieldmap. Just one datawrapper. pass back val
 	private List<Map<Integer, FieldData>> listTemplates; // Templates of initialized data. Used to create later complex data
 														 // TODO rip it out. If anything, sore the complex data instead
 	private IFactory<T> factory;
@@ -142,10 +143,15 @@ public class ObjectDataLoader<T> {
 		this(templateObject, listItems, factory, "");
 	}
 	
-	@SuppressWarnings("unchecked")
 	private ObjectDataLoader(T templateObject, List<T> listItems, IFactory<?> factory, String empty) {
+		this(templateObject, listItems, factory, empty, false);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private ObjectDataLoader(T templateObject, List<T> listItems, IFactory<?> factory, String empty, boolean passthrough) {
 		this();
 		
+		this.passthrough = passthrough;
 		this.templateObject = templateObject;
 		this.factory = (IFactory<T>) factory;
 		//this.valueList = listItems;
@@ -187,6 +193,81 @@ public class ObjectDataLoader<T> {
 	}
 	
 	private void dissolve(Object obj, boolean refreshFields) {
+		
+		// Case 1 : ISuperclass
+		if (!passthrough && obj instanceof ISuperclass) {
+			// Type marked as having a set of subclasses
+			List<ISuperclass> subs = ((ISuperclass) obj).getChildTypes();
+			Map<ISuperclass, Map<Integer, FieldData>> dataMaps = new HashMap<>();
+			Map<ISuperclass, ObjectDataLoader<?>> loaders = new HashMap<>();
+			for (ISuperclass o : subs) {
+				ObjectDataLoader<?> loader = new ObjectDataLoader<>(o, null, null, "", true);
+				Map<Integer, FieldData> dataMap = loader.getFieldMap();
+				dataMaps.put(o, dataMap);
+				loaders.put(o, loader);
+			}
+			
+			SubclassFieldData<?, ?> fieldData = FieldData.subclass(
+					subs, dataMaps,
+					new GenericFactory<ISuperclass, ISuperclass>() {
+						@Override
+						public ISuperclass constructFromData(ISuperclass type, Map<Integer, FieldData> data) {
+							ObjectDataLoader<?> loader = loaders.get(type);
+							for (Integer i : data.keySet())
+								loader.template.get(i).data = data.get(i);
+							return (ISuperclass) loader.fetchEdittedValue();
+						}
+
+						@Override
+						public ISuperclass constructDefault(ISuperclass type) {
+							return type;
+						}
+					},
+					new TypeResolver<ISuperclass, ISuperclass>() {
+						@Override
+						public ISuperclass resolve(ISuperclass obj) {
+							for (ISuperclass o : loaders.keySet()) {
+								if (o.getChildName(o).equals(obj.getChildName(obj)))
+									return o;
+							}
+							return null;
+						}
+
+						@Override
+						public Map<Integer, FieldData> breakdown(ISuperclass obj) {
+							ObjectDataLoader<?> loader = loaders.get(resolve(obj));
+							loader.dissolve(obj, false);
+							return loader.getFieldMap();
+						}
+					},
+					(ISuperclass) obj,
+					new ListCellRenderer<ISuperclass>() {
+						private JLabel label;
+						@Override
+						public Component getListCellRendererComponent(JList<? extends ISuperclass> arg0,
+								ISuperclass arg1, int arg2, boolean arg3, boolean arg4) {
+							if (label == null) {
+								label = new JLabel();
+								label.setOpaque(true);
+							}
+							
+							label.setText(TextUtil.pretty(arg1.getChildName(arg1)));
+							
+							if (arg3)
+								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
+							else
+								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND);
+							return label;
+						}
+					}
+					);
+			template.put(0, DataWrapper.wrap(fieldData));
+			formattingNameIndex = 0;
+			valid = true;
+			return;
+		}
+		
+		
 		// Scan for annotations
 		Collection<FieldWrapper> fields;
 		if (refreshFields) {
@@ -550,6 +631,9 @@ public class ObjectDataLoader<T> {
 			// For each item, create a copy of template by pulling out fields
 			
 			Map<Integer, FieldData> rowMap = new HashMap<>();
+			if (fieldMap.isEmpty()) {
+				rowMap.put(0, template.get(0).data.clone());
+			} else
 			for (Entry<Integer, FieldWrapper> row : fieldMap.entrySet()) {
 				// Type-safe cause of generics; we know these fields exist in list objects
 				Field field = row.getValue().field;
@@ -624,11 +708,11 @@ public class ObjectDataLoader<T> {
 		if (isPrimitiveType(clazz)) {
 			
 			if (clazz.equals(Integer.class) || clazz.equals(int.class))
-				return DataWrapper.wrap(FieldData.simple((Integer) value).name(name).desc(description));
+				return DataWrapper.wrap(FieldData.simple((Integer) (value == null ? 0 : value)).name(name).desc(description));
 			if (clazz.equals(Double.class) || clazz.equals(double.class))
-				return DataWrapper.wrap(FieldData.simple((Double) value).name(name).desc(description));
+				return DataWrapper.wrap(FieldData.simple((Double) (value == null ? 0.0 : value)).name(name).desc(description));
 			if (clazz.equals(Boolean.class) || clazz.equals(boolean.class))
-				return DataWrapper.wrap(FieldData.simple((Boolean) value).name(name).desc(description));
+				return DataWrapper.wrap(FieldData.simple((Boolean) (value == null ? false : value)).name(name).desc(description));
 			System.err.println("Unsupported primitive type: " + clazz);
 			return null;
 		}
@@ -672,7 +756,6 @@ public class ObjectDataLoader<T> {
 					}
 					return DataWrapper.wrap(new CustomFieldData((ICustomData) listTemplate, customlist)
 							.name(name).desc(description));
-				} else {
 				}
 				
 				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
@@ -719,77 +802,31 @@ public class ObjectDataLoader<T> {
 				dataMap.put(row.getKey(), subwrapper.data);
 			}
 			
-			return DataWrapper.wrap(FieldData.map(dataMap)
-					.name(name).desc(description));
-		}
-		
-		if (value instanceof ISuperclass) {
-			// Type marked as having a set of subclasses
-			List<ISuperclass> subs = ((ISuperclass) value).getChildTypes();
-			Map<ISuperclass, Map<Integer, FieldData>> dataMaps = new HashMap<>();
-			Map<ISuperclass, ObjectDataLoader<?>> loaders = new HashMap<>();
-			for (ISuperclass o : subs) {
-				ObjectDataLoader<?> loader = new ObjectDataLoader<>(o);
-				Map<Integer, FieldData> dataMap = loader.getFieldMap();
-				dataMaps.put(o, dataMap);
-				loaders.put(o, loader);
+			// Deduce a template for adding
+			FieldData template = null;
+			if (valueclazz.equals(Integer.class))
+				template = FieldData.simple(0);
+			else if (valueclazz.equals(Double.class))
+				template = FieldData.simple(0.0);
+			else if (valueclazz.equals(Boolean.class))
+				template = FieldData.simple(false);
+			else if (valueclazz.equals(String.class))
+				template = FieldData.simple("");
+			else if (listTemplate != null) {
+				if (listTemplate instanceof ICustomData) {
+					template = FieldData.custom((ICustomData) listTemplate);
+				} else {
+				
+				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
+				template = FieldData.complex(loader.getFieldMap(), loader.getFormatter());
+				}
+			} else {
+				System.err.println("Unable to resolve template for map data! (Field: " + f.getName() + " | class " + valueclazz + ")");
+				System.err.println("Supply a template when mapping to non-primitive data in the map annotation.");
 			}
 			
-			SubclassFieldData<?, ?> fieldData = FieldData.subclass(
-					subs, dataMaps,
-					new GenericFactory<ISuperclass, ISuperclass>() {
-						@Override
-						public ISuperclass constructFromData(ISuperclass type, Map<Integer, FieldData> data) {
-							ObjectDataLoader<?> loader = loaders.get(type);
-							for (Integer i : data.keySet())
-								loader.template.get(i).data = data.get(i);
-							return (ISuperclass) loader.fetchEdittedValue();
-						}
-
-						@Override
-						public ISuperclass constructDefault(ISuperclass type) {
-							return type;
-						}
-					},
-					new TypeResolver<ISuperclass, ISuperclass>() {
-						@Override
-						public ISuperclass resolve(ISuperclass obj) {
-							for (ISuperclass o : loaders.keySet()) {
-								if (o.getChildName(o).equals(obj.getChildName(obj)))
-									return o;
-							}
-							return null;
-						}
-
-						@Override
-						public Map<Integer, FieldData> breakdown(ISuperclass obj) {
-							ObjectDataLoader<?> loader = loaders.get(resolve(obj));
-							loader.dissolve(obj, false);
-							return loader.getFieldMap();
-						}
-					},
-					(ISuperclass) value,
-					new ListCellRenderer<ISuperclass>() {
-						private JLabel label;
-						@Override
-						public Component getListCellRendererComponent(JList<? extends ISuperclass> arg0,
-								ISuperclass arg1, int arg2, boolean arg3, boolean arg4) {
-							if (label == null) {
-								label = new JLabel();
-								label.setOpaque(true);
-							}
-							
-							label.setText(TextUtil.pretty(arg1.getChildName(arg1)));
-							
-							if (arg3)
-								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND);
-							else
-								UIColor.setColors(label, UIColor.Key.EDITOR_MAIN_PANE_BACKGROUND, UIColor.Key.EDITOR_MAIN_PANE_FOREGROUND);
-							return label;
-						}
-					}
-					);
-			return DataWrapper.wrap(fieldData);
+			return DataWrapper.wrap(FieldData.map(dataMap, template)
+					.name(name).desc(description));
 		}
 		
 		// Not a list, not a primitive. Looking like complex
@@ -910,7 +947,8 @@ public class ObjectDataLoader<T> {
 		// Use map of int keys to get data from template+listTemplates.
 		// Use same keys and fieldMap to find the field to insert it into.
 		// Insert into templateObject or each element of valueList if non-null
-		formSingleElement(templateObject, template);
+		
+		templateObject = formSingleElement(templateObject, template);
 		return templateObject;
 	}
 	
@@ -959,7 +997,8 @@ public class ObjectDataLoader<T> {
 		return val;
 	}
 	
-	private void formSingleElement(T obj, Map<Integer, DataWrapper> dataMap) {
+	@SuppressWarnings("unchecked")
+	private T formSingleElement(T obj, Map<Integer, DataWrapper> dataMap) {
 		// Use fields from fieldMap
 		for (Integer key : dataMap.keySet()) {
 			FieldWrapper wrapper = fieldMap.get(key);
@@ -970,6 +1009,10 @@ public class ObjectDataLoader<T> {
 			Object val = fetchValue(data);
 			if (val == null)
 				continue;
+			
+			// Passthrough mode logic
+			if (fieldMap.isEmpty())
+				return (T) val;
 			
 			try {
 				if (wrapper.parentField != null) {
@@ -989,6 +1032,8 @@ public class ObjectDataLoader<T> {
 						+ wrapper.field.getName());
 			}
 		}
+		
+		return obj;
 	}
 	
 	private List<T> formList(ComplexFieldData fieldData) {
@@ -1018,7 +1063,7 @@ public class ObjectDataLoader<T> {
 				template.get(key).data = realValues.get(key);
 			}
 			
-			formSingleElement(obj, template);
+			obj = formSingleElement(obj, template);
 			
 			output.add(obj);
 		}

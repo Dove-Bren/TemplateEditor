@@ -15,23 +15,25 @@ import com.smanzana.templateeditor.editor.fields.MapField;
 public final class MapFieldData<K> extends FieldData {
 	
 	private Map<K,FieldData> map;
+	private FieldData newTemplate;
 	
-	public MapFieldData(Map<K,FieldData> map) {
+	public MapFieldData(Map<K,FieldData> map, FieldData newTemplate) {
 		this.map = map;
+		this.newTemplate = newTemplate;
 	}
 	
 	@Override
 	public FieldData clone() {
 		Map<K, FieldData> cloneNestedTypes = new HashMap<>();
 		for (K key : map.keySet()) {
-			cloneNestedTypes.put(key, map.get(key).clone());
+			cloneNestedTypes.put(key, map.get(key) == null ? null : map.get(key).clone());
 		}
-		return new MapFieldData<K>(cloneNestedTypes);
+		return new MapFieldData<K>(cloneNestedTypes, newTemplate.clone());
 	}
 
 	@Override
 	public EditorField<?> constructField() {
-		return new MapField<K>(map);
+		return new MapField<K>(map, newTemplate);
 	}
 
 	@SuppressWarnings("unchecked")

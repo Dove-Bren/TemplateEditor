@@ -12,7 +12,9 @@ public final class EditorIconRegistry {
 		ARROW_RIGHT("arrow_right.png", "right arrow"),
 		ARROW_DOWN("arrow_down.png", "down arrow"),
 		INSPECT("inspect.png", "inspect"),
-		GRIP("grip.png", "grip");
+		GRIP("grip.png", "grip"),
+		X("X.png", "X (close)"),
+		ADD("add.png", "plus");
 		
 		private String defaultPath;
 		private String shortDesc;

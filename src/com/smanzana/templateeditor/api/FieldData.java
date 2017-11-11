@@ -145,8 +145,8 @@ public abstract class FieldData implements Cloneable {
 				);
 	}
 	
-	public static <K> MapFieldData<K> map(Map<K,FieldData> map) {
-		return new MapFieldData<K>(map);
+	public static <K> MapFieldData<K> map(Map<K,FieldData> map, FieldData newTemplate) {
+		return new MapFieldData<K>(map, newTemplate);
 	}
 	
 	public static <T> ReferenceFieldData<T> reference(Map<String, T> map, T current) {
