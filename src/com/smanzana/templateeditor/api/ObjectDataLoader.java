@@ -215,12 +215,17 @@ public class ObjectDataLoader<T> {
 							ObjectDataLoader<?> loader = loaders.get(type);
 							for (Integer i : data.keySet())
 								loader.template.get(i).data = data.get(i);
-							return (ISuperclass) loader.fetchEdittedValue();
+							return ((ISuperclass) loader.fetchEdittedValue()).cloneObject();
 						}
 
 						@Override
 						public ISuperclass constructDefault(ISuperclass type) {
 							return type;
+						}
+
+						@Override
+						public ISuperclass constructClone(ISuperclass original) {
+							return original.cloneObject();
 						}
 					},
 					new TypeResolver<ISuperclass, ISuperclass>() {

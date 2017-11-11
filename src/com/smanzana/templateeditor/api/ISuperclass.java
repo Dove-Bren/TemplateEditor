@@ -42,4 +42,10 @@ public interface ISuperclass {
 	 */
 	public String getChildName(ISuperclass child);
 	
+	/**
+	 * Construct a clone of the current child object.
+	 * @return
+	 */
+	public ISuperclass cloneObject();
+	
 }

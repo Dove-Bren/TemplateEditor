@@ -85,7 +85,7 @@ public final class SubclassFieldData<T, O> extends FieldData {
 		}
 		
 		return new SubclassFieldData<T, O>(typeList, cloneMap,
-				factory, resolver, formatter, lastObject);
+				factory, resolver, formatter, factory.constructClone(lastObject));
 	}
 
 	@Override
