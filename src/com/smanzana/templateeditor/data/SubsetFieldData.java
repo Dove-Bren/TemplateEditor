@@ -55,4 +55,8 @@ public final class SubsetFieldData<T> extends FieldData {
 	public void fillFromField(EditorField<?> field) {
 		selected = (List<T>) field.getObject();
 	}
+	
+	public List<T> getSelection() {
+		return selected;
+	}
 }

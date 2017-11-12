@@ -35,8 +35,10 @@ import com.smanzana.templateeditor.data.MapFieldData;
 import com.smanzana.templateeditor.data.ReferenceFieldData;
 import com.smanzana.templateeditor.data.SimpleFieldData;
 import com.smanzana.templateeditor.data.SubclassFieldData;
+import com.smanzana.templateeditor.data.SubsetFieldData;
 import com.smanzana.templateeditor.editor.fields.ChildEditorField.GenericFactory;
 import com.smanzana.templateeditor.editor.fields.ChildEditorField.TypeResolver;
+import com.smanzana.templateeditor.editor.fields.GrabListField.DisplayFormatter;
 import com.smanzana.templateeditor.uiutils.TextUtil;
 import com.smanzana.templateeditor.uiutils.UIColor;
 
@@ -266,64 +268,63 @@ public class ObjectDataLoader<T> {
 						}
 					}
 					);
+			
 			template.put(0, DataWrapper.wrap(fieldData));
 			formattingNameIndex = 0;
-			valid = true;
-			return;
-		}
-		
-		
-		// Scan for annotations
-		Collection<FieldWrapper> fields;
-		if (refreshFields) {
-			fields = new LinkedList<>();
-			collectFields(fields, obj.getClass(), obj);
-			// OTHER
-			for (FieldWrapper wrapper : fields) {
-				wrapper.field.setAccessible(true);
-				fieldMap.put(wrapper.key, wrapper);
-			}
+			
 		} else {
-			fields = fieldMap.values();
-		}
-		
-		for (FieldWrapper wrapper : fields) {
-			Object parent = obj;
-			Field f = wrapper.field;
-			//f.setAccessible(true);
-			Object val = null;
-			try {
-				if (wrapper.parentField != null) {
-					wrapper.parentField.setAccessible(true);
-					parent = wrapper.parentField.get(obj);
-					val = f.get(parent);
-				} else {
-					val = f.get(obj);
+			// Scan for annotations
+			Collection<FieldWrapper> fields;
+			if (refreshFields) {
+				fields = new LinkedList<>();
+				collectFields(fields, obj.getClass(), obj);
+				// OTHER
+				for (FieldWrapper wrapper : fields) {
+					wrapper.field.setAccessible(true);
+					fieldMap.put(wrapper.key, wrapper);
 				}
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-				System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
-				+ ": " + e.getMessage());
-				valid = false;
-				return;
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-				System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
-				+ ": " + e.getMessage());
-				valid = false;
-				return;
+			} else {
+				fields = fieldMap.values();
 			}
 			
-			int key = wrapper.key;
-			DataWrapper data = wrapField(f, f.getType(), val, wrapper.template, parent, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
-			if (data == null) {
-				System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
-				System.err.println("Aborting");
-				valid = false;
-				return;
+			for (FieldWrapper wrapper : fields) {
+				Object parent = obj;
+				Field f = wrapper.field;
+				//f.setAccessible(true);
+				Object val = null;
+				try {
+					if (wrapper.parentField != null) {
+						wrapper.parentField.setAccessible(true);
+						parent = wrapper.parentField.get(obj);
+						val = f.get(parent);
+					} else {
+						val = f.get(obj);
+					}
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+					System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
+					+ ": " + e.getMessage());
+					valid = false;
+					return;
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+					System.out.println("Failed parsing field " + f.getName() + " on object type " + obj.getClass()
+					+ ": " + e.getMessage());
+					valid = false;
+					return;
+				}
+				
+				int key = wrapper.key;
+				DataWrapper data = wrapField(f, f.getType(), val, wrapper.template, parent, wrapper.factory, pullName(wrapper), pullDesc(wrapper));
+				if (data == null) {
+					System.err.println("Could not dissolve field " + f.getName() + " on class " + templateObject.getClass().getName());
+					System.err.println("Aborting");
+					valid = false;
+					return;
+				}
+				
+				template.put(key, data);			
 			}
-			
-			template.put(key, data);			
 		}
 		
 		valid = true; // Didn't error, must be valid
@@ -435,6 +436,7 @@ public class ObjectDataLoader<T> {
 						@Override
 						public Object construct() {
 							try {
+								factoryMethod.setAccessible(true);
 								return factoryMethod.invoke(o, (Object[]) null);
 							} catch (IllegalAccessException e) {
 								e.printStackTrace();
@@ -686,7 +688,10 @@ public class ObjectDataLoader<T> {
 			if (aEnum != null) {
 				// All values known. Use a reference field
 				Map<String, Object> values;
-				if (aEnum.value() != null && !aEnum.value().trim().isEmpty()) {
+				if (IRuntimeEnumerable.class.isAssignableFrom(parent.getClass())) {
+					values = ((IRuntimeEnumerable) parent).fetchValidValues(
+							aEnum.value());
+				} else if (aEnum.value() != null && !aEnum.value().trim().isEmpty()) {
 					try {
 						Method enumerator = parent.getClass().getDeclaredMethod(aEnum.value(), String.class);
 						values = (Map<String, Object>) enumerator.invoke(parent);
@@ -695,9 +700,6 @@ public class ObjectDataLoader<T> {
 						e.printStackTrace();
 						System.err.println("Unable to find declare enumeration method: " + aEnum.value());
 					}
-				} else if (IRuntimeEnumerable.class.isAssignableFrom(parent.getClass())) {
-					values = ((IRuntimeEnumerable) parent).fetchValidValues(
-							aEnum.value());
 				} else {
 					values = null;
 					System.err.println("Field marked as runtime-enumeration but "
@@ -705,10 +707,36 @@ public class ObjectDataLoader<T> {
 				}
 				
 				if (values != null) {
-					return DataWrapper.wrap(
-						FieldData.reference(values, value)
-						.name(name).desc(description)
-					);
+					// If single, FieldData.reference
+					// If list, FieldData.subset
+					if (value instanceof List) {
+						List<Object> valueList = new ArrayList<>(values.values());
+						final Map<String, Object> ref = values;
+						return DataWrapper.wrap(
+							FieldData.subset(valueList, (List) value,
+									new DisplayFormatter<Object>() {
+
+										@Override
+										public String getListDataName(Object data) {
+											for (Entry<String, Object> row : ref.entrySet())
+												if (row.getValue().equals(data))
+													return row.getKey();
+											
+											return "X> " + data.toString() + " <X";
+										}
+
+										@Override
+										public String getListDataDesc(Object data) {
+											return null;
+										}
+							}).name(name).desc(description)
+						);
+					} else {
+						return DataWrapper.wrap(
+							FieldData.reference(values, value)
+							.name(name).desc(description)
+						);
+					}
 				}
 			}
 		}
@@ -1009,6 +1037,8 @@ public class ObjectDataLoader<T> {
 			val = map;
 		} else if (data.data instanceof ReferenceFieldData) {
 			val = ((ReferenceFieldData<?>) data.data).getSelection();
+		} else if (data.data instanceof SubsetFieldData) {
+			val = ((SubsetFieldData<?>) data.data).getSelection();
 		} else {
 			System.err.println("Missing case handler in ObjectDataLoader (formSingleElement X fetchValue");
 		}

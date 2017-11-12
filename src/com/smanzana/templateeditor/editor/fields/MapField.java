@@ -84,9 +84,9 @@ public class MapField<K> extends AEditorField<Map<K, FieldData>> implements IEdi
 				owner.dirty();
 		}
 		
-		public boolean isNull() {
-			return this.nested == null;
-		}
+//		public boolean isNull() {
+//			return this.nested == null;
+//		}
 		
 		@Override
 		public FieldData clone() {

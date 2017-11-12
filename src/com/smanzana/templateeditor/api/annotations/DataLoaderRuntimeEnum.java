@@ -19,6 +19,16 @@ import java.lang.annotation.Target;
  * {@link com.smanzana.templateeditor.api.IRuntimeEnumerable IRuntimeEnumerable}
  * interface</li>
  * </ol>
+ * 
+ * If the parent class does not implement the
+ * {@link com.smanzana.templateeditor.api.IRuntimeEnumerable IRuntimeEnumerable}
+ * interface, the value given to the tag is used to get all potential values.
+ * 
+ * If, however, the parent class <i>does</i> implement the class, the value is instead
+ * used as a key and passed in to the 
+ * {@link com.smanzana.templateeditor.api.IRuntimeEnumerable#fetchValidValues(String)
+ * fetchValidValues(String)} method. This allows multiple runtime-enumerable fields
+ * in the same class.
  * </p>
  * @author Skyler
  *
