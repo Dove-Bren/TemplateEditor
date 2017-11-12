@@ -805,13 +805,18 @@ public class ObjectDataLoader<T> {
 			}
 			
 			for (Entry<?, ?> row : map.entrySet()) {
-				DataWrapper subwrapper = wrapField(null, valueclazz, row.getValue(), null, null, null, null, null);
-				// really only care about the FieldData we get with the wrapper
-				dataMap.put(row.getKey(), subwrapper.data);
+				if (row.getValue() == null)
+					dataMap.put(row.getKey(), null);
+				else {
+					DataWrapper subwrapper = wrapField(null, valueclazz, row.getValue(), null, null, null, null, null);
+					// really only care about the FieldData we get with the wrapper
+					dataMap.put(row.getKey(), subwrapper.data);
+				}
 			}
 			
 			// Deduce a template for adding
 			FieldData template = null;
+			ObjectDataLoader<?> templateLoader = null;
 			if (valueclazz.equals(Integer.class))
 				template = FieldData.simple(0);
 			else if (valueclazz.equals(Double.class))
@@ -825,16 +830,18 @@ public class ObjectDataLoader<T> {
 					template = FieldData.custom((ICustomData) listTemplate);
 				} else {
 				
-				ObjectDataLoader<?> loader = new ObjectDataLoader<>(listTemplate, (List) value, factory, "");
-				template = FieldData.complex(loader.getFieldMap(), loader.getFormatter());
+				templateLoader = new ObjectDataLoader<>(listTemplate, null, factory, "");
+				template = FieldData.complex(templateLoader.getFieldMap(), templateLoader.getFormatter());
 				}
 			} else {
 				System.err.println("Unable to resolve template for map data! (Field: " + f.getName() + " | class " + valueclazz + ")");
 				System.err.println("Supply a template when mapping to non-primitive data in the map annotation.");
 			}
 			
-			return DataWrapper.wrap(FieldData.map(dataMap, template)
+			DataWrapper wrapper = DataWrapper.wrap(FieldData.map(dataMap, template)
 					.name(name).desc(description));
+			wrapper.loader = templateLoader;
+			return wrapper;
 		}
 		
 		// Not a list, not a primitive. Looking like complex
@@ -993,7 +1000,11 @@ public class ObjectDataLoader<T> {
 			Map<Object, Object> map = new HashMap<>();
 			Map<?, ?> retMap = ((MapFieldData<?>) data.data).getMapping();
 			for (Object k : retMap.keySet()) {
-				map.put(k, fetchValue(DataWrapper.wrap((FieldData) retMap.get(k))));
+				FieldData d = (FieldData) retMap.get(k);
+				if (d == null)
+					map.put(k, null);
+				else
+					map.put(k, fetchValue(new DataWrapper(d, data.loader, false)));
 			}
 			val = map;
 		} else if (data.data instanceof ReferenceFieldData) {

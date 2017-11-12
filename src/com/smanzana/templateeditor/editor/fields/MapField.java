@@ -193,8 +193,8 @@ public class MapField<K> extends AEditorField<Map<K, FieldData>> implements IEdi
 		Map<K, FieldData> map = new HashMap<>();
 		for (K k : wrappedMap.keySet()) {
 			ValueButtonWrapper wrapper = (ValueButtonWrapper) wrappedMap.get(k);
-			if (wrapper.isNull())
-				continue;
+//			if (wrapper.isNull())
+//				continue;
 			map.put(k, wrapper.getObject());
 		}
 		
