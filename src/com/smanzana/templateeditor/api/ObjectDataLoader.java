@@ -785,7 +785,7 @@ public class ObjectDataLoader<T> {
 			if (listTemplate != null) {
 				
 				//Check if it's a piece of CustomData
-				if (ICustomData.class.isAssignableFrom(subclazz)) {
+				if (directlyImplements(subclazz, ICustomData.class)) {
 					List<ICustomData> customlist = new LinkedList<>();
 					for (ICustomData d : (List<? extends ICustomData>) value) {
 						customlist.add(d);
@@ -854,12 +854,11 @@ public class ObjectDataLoader<T> {
 			else if (valueclazz.equals(String.class))
 				template = FieldData.simple("");
 			else if (listTemplate != null) {
-				if (listTemplate instanceof ICustomData) {
+				if (directlyImplements(valueclazz, ICustomData.class)) {
 					template = FieldData.custom((ICustomData) listTemplate);
 				} else {
-				
-				templateLoader = new ObjectDataLoader<>(listTemplate, null, factory, "");
-				template = FieldData.complex(templateLoader.getFieldMap(), templateLoader.getFormatter());
+					templateLoader = new ObjectDataLoader<>(listTemplate, null, factory, "");
+					template = FieldData.complex(templateLoader.getFieldMap(), templateLoader.getFormatter());
 				}
 			} else {
 				System.err.println("Unable to resolve template for map data! (Field: " + f.getName() + " | class " + valueclazz + ")");
@@ -878,7 +877,7 @@ public class ObjectDataLoader<T> {
 		// Then pass off to them.
 		
 		// None of the above. Check if it's a piece of CustomData
-		if (ICustomData.class.isAssignableFrom(clazz)) {
+		if (directlyImplements(clazz, ICustomData.class)) {
 			ICustomData custom = (ICustomData) value;
 			return DataWrapper.wrap(FieldData.custom(custom).name(name).desc(description));
 		}
@@ -976,6 +975,16 @@ public class ObjectDataLoader<T> {
 		return formSingle();
 	}
 	
+	// Secret! Internal method! hehe
+	// pulls out data from the given field and replaces them in template, then fetches like regular
+	private T fetchEdittedValue(ComplexFieldData data) {
+		for (Entry<Integer, FieldData> row : data.getNestedTypes().entrySet()) {
+			template.get(row.getKey()).data = row.getValue();
+		}
+		return fetchEdittedValue();
+		
+	}
+	
 	/**
 	 * Just like fetchEdittedValue except returns the modified list
 	 * of objects provided during construction.
@@ -1014,7 +1023,7 @@ public class ObjectDataLoader<T> {
 				data.loader.listTemplates = cfd.getListData();
 				val = data.loader.fetchEdittedList((ComplexFieldData) data.data);
 			} else {
-				val = data.loader.fetchEdittedValue();
+				val = data.loader.fetchEdittedValue(cfd);
 			}
 		} else if (data.data instanceof CustomFieldData) {
 			CustomFieldData cfd = (CustomFieldData) data.data;
@@ -1126,6 +1135,17 @@ public class ObjectDataLoader<T> {
 		return (clazz.equals(Integer.class)
 			|| clazz.equals(Boolean.class)
 			|| clazz.equals(Double.class));
+	}
+	
+	public static final boolean directlyImplements(Class<?> clazz, Class<?> iface) {
+		if (clazz == null || iface == null)
+			return false;
+		Class<?>[] types = clazz.getInterfaces();
+		for (Class<?> t : types)
+			if (t.equals(iface))
+				return true;
+		
+		return false;
 	}
 	
 }
