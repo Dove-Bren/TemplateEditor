@@ -190,7 +190,7 @@ public class MapField<K> extends AEditorField<Map<K, FieldData>> implements IEdi
 		Map<K, FieldData> wrappedMap = editor.fetchData();
 		
 		// Map is wrapped in ValueButtonWrappers. Need to unwrap
-		Map<K, FieldData> map = new HashMap<>();
+		Map<K, FieldData> map = new LinkedHashMap<>();
 		for (K k : wrappedMap.keySet()) {
 			ValueButtonWrapper wrapper = (ValueButtonWrapper) wrappedMap.get(k);
 //			if (wrapper.isNull())

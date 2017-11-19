@@ -1,6 +1,6 @@
 package com.smanzana.templateeditor.data;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.smanzana.templateeditor.api.FieldData;
@@ -24,7 +24,7 @@ public final class MapFieldData<K> extends FieldData {
 	
 	@Override
 	public FieldData clone() {
-		Map<K, FieldData> cloneNestedTypes = new HashMap<>();
+		Map<K, FieldData> cloneNestedTypes = new LinkedHashMap<>();
 		for (K key : map.keySet()) {
 			cloneNestedTypes.put(key, map.get(key) == null ? null : map.get(key).clone());
 		}

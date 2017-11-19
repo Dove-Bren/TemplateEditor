@@ -572,12 +572,58 @@ public class ObjectDataLoader<T> {
 				}
 			}
 			
+			if (factory == null && Map.class.isAssignableFrom(f.getType())) {
+				// To a little special factory stuff for maps
+				//Class<?> keyclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[0];
+				Class<?> valueclazz = (Class<?>) ((ParameterizedType)f.getGenericType()).getActualTypeArguments()[1];
+				
+				if (valueclazz.equals(Integer.class)) {
+					if (template == null)
+						template = FieldData.simple(0);
+					factory = new IFactory<Integer>() {
+						@Override
+						public Integer construct() {
+							return 0;
+						}
+					};
+				} else if (valueclazz.equals(Double.class)) {
+					if (template == null)
+						template = FieldData.simple(0.0);
+					factory = new IFactory<Double>() {
+						@Override
+						public Double construct() {
+							return 0.0;
+						}
+					};
+				} else if (valueclazz.equals(Boolean.class)) {
+					if (template == null)
+						template = FieldData.simple(false);
+					factory = new IFactory<Boolean>() {
+						@Override
+						public Boolean construct() {
+							return false;
+						}
+					};
+				} else if (valueclazz.equals(String.class)) {
+					if (template == null)
+						template = FieldData.simple("");
+					factory = new IFactory<String>() {
+						@Override
+						public String construct() {
+							return "";
+						}
+					};
+				}
+			}
+			
 			if (aData != null && aData.expand()) {
 				// Don't do regular stuff;
 				// extract from nested type and then continue
 				Class<?> expandType = f.getType();
+				if (ISuperclass.class.isAssignableFrom(expandType)) {
+					System.out.println("Warning: ISuperclass marked object being expanded. These tags are incompatible!");
+				}
 				try {
-					System.out.println("Field " + f.getName() + " type " + f.getType());
 					f.setAccessible(true);
 					collectFields(list, expandType, f.get(o), f);
 				} catch (Exception e) {
@@ -807,7 +853,7 @@ public class ObjectDataLoader<T> {
 			return null;
 		}
 		
-		if (clazz.isAssignableFrom(Map.class)) {
+		if (Map.class.isAssignableFrom(clazz)){
 			
 			if (f == null) {
 				// Nested map in something like a map. DO NOT SUPPORT
@@ -845,24 +891,23 @@ public class ObjectDataLoader<T> {
 			// Deduce a template for adding
 			FieldData template = null;
 			ObjectDataLoader<?> templateLoader = null;
-			if (valueclazz.equals(Integer.class))
-				template = FieldData.simple(0);
-			else if (valueclazz.equals(Double.class))
-				template = FieldData.simple(0.0);
-			else if (valueclazz.equals(Boolean.class))
-				template = FieldData.simple(false);
-			else if (valueclazz.equals(String.class))
-				template = FieldData.simple("");
-			else if (listTemplate != null) {
-				if (directlyImplements(valueclazz, ICustomData.class)) {
+			if (factory != null) {
+				if (listTemplate == null) {
+					listTemplate = factory.construct();
+				}
+				
+				if (listTemplate instanceof FieldData) {
+					// We may have already figured out a template
+					template = (FieldData) listTemplate;
+				} else if (directlyImplements(valueclazz, ICustomData.class)) {
 					template = FieldData.custom((ICustomData) listTemplate);
 				} else {
 					templateLoader = new ObjectDataLoader<>(listTemplate, null, factory, "");
 					template = FieldData.complex(templateLoader.getFieldMap(), templateLoader.getFormatter());
 				}
 			} else {
-				System.err.println("Unable to resolve template for map data! (Field: " + f.getName() + " | class " + valueclazz + ")");
-				System.err.println("Supply a template when mapping to non-primitive data in the map annotation.");
+				System.err.println("Unable to resolve factory for map data! (Field: " + f.getName() + " | class " + valueclazz + ")");
+				System.err.println("Supply a factory when mapping to non-primitive data with the list annotation.");
 			}
 			
 			DataWrapper wrapper = DataWrapper.wrap(FieldData.map(dataMap, template)
@@ -960,6 +1005,16 @@ public class ObjectDataLoader<T> {
 		return listTemplates;
 	}
 	
+	public void updateData(Map<Integer, FieldData> dataMap) {
+		if (listTemplates != null && listTemplates.size() > 0) {
+			System.err.println("updateData does not work for list objects!");
+		}
+		
+		for (Integer i : dataMap.keySet()) {
+			template.get(i).data = dataMap.get(i);
+		}
+	}
+	
 	/**
 	 * Returns the object that represents the current state of the values being editted.
 	 * 
@@ -1004,7 +1059,8 @@ public class ObjectDataLoader<T> {
 		return templateObject;
 	}
 	
-	private Object fetchValue(DataWrapper data) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private Object fetchValue(DataWrapper data, FieldWrapper wrapper, Object oldVal) {
 		Object val = null;
 		
 		if (data.data instanceof SimpleFieldData) {
@@ -1034,14 +1090,23 @@ public class ObjectDataLoader<T> {
 		} else if (data.data instanceof SubclassFieldData) {
 			val = ((SubclassFieldData<?, ?>) data.data).getValue();
 		} else if (data.data instanceof MapFieldData) {
-			Map<Object, Object> map = new HashMap<>();
+			Map<Object, Object> map = new LinkedHashMap<>();
+			Map<Object, Object> oldMap = (Map<Object, Object>) oldVal;
 			Map<?, ?> retMap = ((MapFieldData<?>) data.data).getMapping();
 			for (Object k : retMap.keySet()) {
 				FieldData d = (FieldData) retMap.get(k);
+				
+				// Load up loader with val to set fields on
+				if (data.loader != null) { // If not a simple no-loader field
+					((ObjectDataLoader) data.loader).templateObject = oldMap.get(k);
+					if (data.loader.templateObject == null) // construct a new one instead
+						((ObjectDataLoader) data.loader).templateObject = wrapper.factory.construct();
+				}
+				
 				if (d == null)
 					map.put(k, null);
 				else
-					map.put(k, fetchValue(new DataWrapper(d, data.loader, false)));
+					map.put(k, fetchValue(new DataWrapper(d, data.loader, false), wrapper, null));
 			}
 			val = map;
 		} else if (data.data instanceof ReferenceFieldData) {
@@ -1054,7 +1119,7 @@ public class ObjectDataLoader<T> {
 		
 		return val;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private T formSingleElement(T obj, Map<Integer, DataWrapper> dataMap) {
 		// Use fields from fieldMap
@@ -1064,15 +1129,25 @@ public class ObjectDataLoader<T> {
 			
 			// TODO user added registration to counter dissolve here
 			
-			Object val = fetchValue(data);
-			if (val == null)
-				continue;
-			
-			// Passthrough mode logic
-			if (fieldMap.isEmpty())
-				return (T) val;
-			
 			try {
+				Object oldVal = null;
+				if (wrapper != null) {
+					if (wrapper.parentField != null) {
+						// Not actually on obj but nested
+						Object actual = wrapper.parentField.get(obj);
+						oldVal = wrapper.field.get(actual);
+					} else {
+						oldVal = wrapper.field.get(obj);
+					}
+				}
+				Object val = fetchValue(data, wrapper, oldVal);
+				if (val == null)
+					continue;
+				
+				// Passthrough mode logic
+				if (fieldMap.isEmpty())
+					return (T) val;
+			
 				if (wrapper.parentField != null) {
 					// Not actually on obj but nested
 					Object actual = wrapper.parentField.get(obj);
