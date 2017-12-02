@@ -24,12 +24,12 @@ Annotations are used to mark fields in your Java classes so that ObjectDataLoade
 
 An enumerated list of annotations follows.
 
-- [DataLoaderData](#DataLoaderData)
-- [DataLoaderName](#DataLoaderName)
-- [DataLoaderDescription](#DataLoaderDescription)
-- [DataLoaderList](#DataLoaderList)
-- [DataLoaderFactory](#DataLoaderFactory)
-- [DataLoaderRuntimeEnum](#DataLoaderRuntimeEnum)
+- [DataLoaderData](#dataloaderdata)
+- [DataLoaderName](#dataloadername)
+- [DataLoaderDescription](#dataloaderdescription)
+- [DataLoaderList](#dataloaderlist)
+- [DataLoaderFactory](#dataloaderfactory)
+- [DataLoaderRuntimeEnum](#dataloaderruntimeenum)
 
 #### DataLoaderData
 The most generic tag. Use on single references or primitive data (e.g. String, MyClassB, int). This tag allows you to specify an alternate name and description of the field (displayed in the editor; defaults to a cleaned-up version of the field name) as well as whether the field should be expanded (Instead of displaying a link to the field, pull out all fields and show them inline. Only makes sense when the field is a reference to a class).
@@ -149,8 +149,8 @@ public class Class2 implements IRuntimeEnumerable<Spell> {
 ### Interfaces
 In addition to the tags listed above, ObjectDataLoaders use a handful of interfaces to decide exactly how a type should be editted. Even if marked with one of these interfaces, fields **must be marked with one of the above tags** to even be considered.
 
-- [Superclass](#ISuperclass)
-- [CustomData](#ICustomData)
+- [Superclass](#isuperclass)
+- [CustomData](#icustomdata)
 
 #### Superclass
 This interface is used to specify that references to this type should construct elements of one of a list of known subtypes. This works exceptionally well for abstract classes: a reference to the base class doesn't care which subtype it is AND the editor cannot instantiate the abstract base class!
